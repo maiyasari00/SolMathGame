@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SOLMATH — Start</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%}
+    body{
+      background:#0b0f16;
+      display:flex;justify-content:center;align-items:center;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+    }
+    .frame{
+      width:min(100vw,1100px);
+      aspect-ratio:16/9;
+      position:relative;overflow:hidden;
+      border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.45);
+      background:#0a0f1c;
+    }
+    .art{position:absolute;inset:0;display:grid;place-items:center;background:#0a0f1c}
+    .art img{max-width:100%;max-height:100%;object-fit:contain;display:block;user-select:none;-webkit-user-drag:none}
+    #btn-mulai-ui{
+      position:absolute; bottom:25%; left:50%; transform:translateX(-50%);
+      width:260px; cursor:pointer; user-select:none;
+      transition:transform .15s ease, filter .15s ease;
+    }
+    #btn-mulai-ui:hover{ filter:brightness(1.08); transform:translateX(-50%) scale(1.05) }
+    #btn-mulai-ui:active{ transform:translateX(-50%) scale(.92) }
+    .hint{
+      position:absolute; right:12px; top:12px; font-size:12px; color:#becce6;
+      background:rgba(0,0,0,.35); padding:6px 10px; border-radius:999px;
+    }
+  </style>
+</head>
+<body>
+  <audio id="bgm" src="bgmusic.mp3" autoplay loop></audio>
+  <div class="frame">
+    <div class="art">
+      <img src="awal template.png" alt="SOLMATH — Start" id="img-awal">
+      <img id="btn-mulai-ui" src="tombol mulai.png" alt="Mulai" tabindex="0" />
+      <div class="hint">Klik “MULAI” • Enter/Spasi</div>
+    </div>
+  </div>
+
+  <script>
+    const startBtn = document.getElementById("btn-mulai-ui");
+    function goNext(){ window.location.href = "slde2.html"; }
+    startBtn.addEventListener("click", goNext);
+
+    // aksesibilitas: Enter/Space saat gambar fokus
+    startBtn.addEventListener("keydown", (e)=>{
+      if(e.key === "Enter" || e.key === " " || e.code === "Space"){ e.preventDefault(); goNext(); }
+    });
+
+    // shortcut global
+    window.addEventListener('keydown', e=>{
+      if(e.key==='Enter' || e.key===' ' || e.code==='Space'){
+        e.preventDefault();
+        goNext();
+      }
+    });
+  </script>
+</body>
+</html>
