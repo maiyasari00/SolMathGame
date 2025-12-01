@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SOLMATH — Laboratorium</title>
+
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+
+  body{
+    width:100vw;height:100vh;overflow:hidden;
+    background:#0b0f16; display:flex; justify-content:center; align-items:center;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+  }
+
+  .frame{
+    width: min(100vw, calc(100vh * 16 / 9));
+    aspect-ratio:16/9;
+    position:relative;
+    overflow:hidden;
+    border-radius:18px;
+    box-shadow:0 24px 60px rgba(0,0,0,.45);
+    background:#000;
+  }
+
+  /* background lab */
+  .bg-lab{
+    position:absolute; inset:0;
+    width:100%; height:100%;
+    object-fit:contain;
+    background:#0b0f16;
+  }
+
+  /* tombol pengaturan kiri atas */
+  .btn-setting{
+    position:absolute;
+    top:2%;
+    left:12%;
+    width:6%;
+    cursor:pointer;
+    transition:0.2s;
+    z-index:50;
+  }
+  
+  .btn-setting:hover{
+    transform:scale(1.05);
+    filter:brightness(1.2);
+  }
+
+  /* papan kiri untuk info */
+  .info-board{
+    position:absolute;
+    left:10%;
+    top:19%;
+    width:20%;
+    height:58%;
+    padding:10px 12px;
+    color:#f5e6d3;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size:1.02vw;
+    line-height:1.45;
+    opacity:0;
+    transform:translateY(6px);
+    transition:.6s ease;
+  }
+  .info-board.show{
+    opacity:1;
+    transform:translateY(0);
+  }
+  .info-title{
+    font-weight:800;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size:1.4vw;
+    margin-bottom:6px;
+    letter-spacing:.5px;
+  }
+  .info-item{
+    margin-top:8px;
+  }
+
+  /* area papan scan kanan */
+  .scan-area{
+    position:absolute;
+    right:12%;
+    top:18%;
+    width:48%;
+    height:62%;
+    display:grid;
+    place-items:center;
+  }
+
+  .scan-item{
+    position:relative;
+    width:55%;
+    height:auto;
+    z-index:2;
+  }
+
+  /* sinar scan */
+  .scan-line{
+    position:absolute;
+    left:50%;
+    top:0;
+    transform:translateX(-50%);
+    width:70%;
+    height:8%;
+    background:linear-gradient(
+      to bottom,
+      rgba(0,255,255,0),
+      rgba(0,255,255,.85),
+      rgba(0,255,255,0)
+    );
+    box-shadow:0 0 25px rgba(0,255,255,.9);
+    border-radius:999px;
+    animation:scanMove 1.8s ease-in-out 1 forwards;
+    z-index:3;
+    opacity:0;
+  }
+  .scan-line.run{ opacity:1; }
+
+  @keyframes scanMove{
+    0%   { top:5%; }
+    50%  { top:80%; }
+    100% { top:5%; }
+  }
+
+  /* tombol bawah & papan kerja */
+  .btn-menu{ position:absolute; bottom:3%; width:18%; cursor:pointer; transition:0.2s; }
+  .btn-bukti{ left:21%; cursor:pointer; transition:0.2s; }
+  .btn-lab{ left:41%; cursor:pointer; transition:0.2s; }
+  .btn-tersangka{ left:61%; cursor:pointer; transition:0.2s; }
+
+  .btn-menu{
+    cursor:pointer;
+    transition:0.2s transform ease, 0.2s filter ease;
+    transform-origin:center;
+  }
+  .btn-menu:hover{
+    transform:scale(1.05);
+    filter:brightness(1.2) drop-shadow(0 6px 8px rgba(0,0,0,.45));
+  }
+  .btn-menu:active{
+    transform:scale(0.97);
+    filter:brightness(0.95);
+  }
+
+  /* TEKS ENERGI & UANG (sesuaikan posisinya di bar atas) */
+  .status-energi{
+    position:absolute;
+    top:3%;
+    left:25%;
+    font-size:22px;
+    font-weight:800;
+    color:#ffd45e;
+    text-shadow:0 2px 6px rgba(0,0,0,.8);
+    z-index:20;
+    pointer-events:none;
+  }
+
+  .status-uang{
+    position:absolute;
+    top:3%;
+    right:35%;
+    font-size:22px;
+    font-weight:800;
+    color:#ffd45e;
+    text-shadow:0 2px 6px rgba(0,0,0,.8);
+    z-index:20;
+    pointer-events:none;
+  }
+
+  /* ====== OVERLAY OPTION (mirip slide5) ====== */
+  .overlay{
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,.55);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:100;
+  }
+  .overlay.active{display:flex;}
+
+  .panel{
+    position:relative;
+    transform:scale(0.9);
+    transform-origin:center;
+  }
+  .panel img{
+    display:block;
+    max-height:70vh;
+    width:auto;
+  }
+  .optBtns{position:absolute;inset:0;}
+  .opt{position:absolute;cursor:pointer;}
+
+  /* ====== OVERLAY INTRO HINT SETELAH SCAN PERTAMA ====== */
+  .intro-overlay{
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,0.55);
+    display:none;              /* default: tidak tampil */
+    align-items:center;
+    justify-content:center;
+    z-index:90;
+  }
+
+  .intro-card{
+    width:360px;
+    background:#fbe7cf;
+    border-radius:18px;
+    padding:18px 20px 20px;
+    box-shadow:0 16px 40px rgba(0,0,0,.45);
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    text-align:center;
+  }
+
+  .intro-title{
+    font-size:20px;
+    font-weight:700;
+    color:#4b2c24;
+  }
+
+  .intro-text{
+    font-size:16px;
+    line-height:1.4;
+    color:#2b1a18;
+  }
+
+  .intro-ok{
+    margin-top:8px;
+    border:none;
+    border-radius:999px;
+    padding:8px 18px;
+    font-size:16px;
+    font-weight:600;
+    cursor:pointer;
+    color:#ffffff;
+    background:#c0693d;
+    box-shadow:0 4px 8px rgba(0,0,0,.35);
+  }
+
+  .intro-ok:active{
+    transform:scale(0.97);
+    box-shadow:0 2px 5px rgba(0,0,0,.45);
+  }
+</style>
+</head>
+
+<body>
+  <audio id="bgm" src="bgmusic.mp3" autoplay loop></audio>
+  <div class="frame">
+    <img src="slide lab.png" class="bg-lab" alt="Laboratorium">
+    <img src="tombol pengaturan.png" class="btn-setting" id="btnMenu" alt="Pengaturan">
+
+    <!-- angka energi & uang --> 
+    <div class="status-energi"><span id="teksEnergi">0</span></div>
+    <div class="status-uang"><span id="teksUang">0</span></div>
+
+    <!-- papan info kiri (tampil setelah scan) -->
+    <div id="infoBoard" class="info-board">
+      <div class="info-title">HASIL SCAN</div>
+      <div id="infoText"></div>
+    </div>
+
+    <!-- area scan kanan -->
+    <div class="scan-area">
+      <div style="position:relative; width:80%; height:80%; display:grid; place-items:center;">
+        <img id="scanItem" class="scan-item" src="" alt="Barang Bukti">
+        <div id="scanLine" class="scan-line"></div>
+      </div>
+    </div>
+
+    <!-- menu bawah -->
+    <img src="barang_bukti.png" class="btn-menu btn-bukti" alt="Barang Bukti" onclick="window.location.href='asa3.html'">
+    <img src="laboratorium.png" class="btn-menu btn-lab" alt="Laboratorium" onclick="window.location.href='asa4.html'">
+    <img src="tersangka.png" class="btn-menu btn-tersangka" alt="Tersangka" onclick="window.location.href='asa5.html'">
+
+    <!-- ===== OVERLAY OPTION (mirip slide5) ===== -->
+    <div class="overlay" id="optOverlay">
+      <div class="panel">
+        <img src="papan option.png" alt="Papan Opsi" id="optBoard">
+        <div class="optBtns">
+          <img class="opt" id="optHidup"   src="tombol mati.png"    style="left:45%; top:26%; width:35%">
+          <img class="opt" id="optKembali" src="tombol kembali.png" style="left:45%; top:68%; width:35%">
+          <img class="opt" id="optUlang"   src="tombol ulang.png"   style="left:45%; top:47%; width:35%">
+          <img class="opt" id="optClose"   src="tombol silang.png"  style="right:7%; top:6%;  width:6%">
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== OVERLAY INTRO HINT (MUNCUL SETELAH SCAN PERTAMA) ===== -->
+    <div id="introOverlay" class="intro-overlay">
+      <div class="intro-card">
+        <div class="intro-title">Instruksi</div>
+        <div class="intro-text">
+          Tekan Barang Bukti di bawah untuk kembali<br>
+          dan menemukan kebenaran pada barang lain.
+        </div>
+        <button id="introOk" class="intro-ok">OK</button>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+  /* ====== GAME STATE GLOBAL (50 ENERGI + REGEN 2 MENIT) ====== */
+  const MAX_ENERGI       = 50;
+  const REGEN_INTERVAL_MS = 2 * 60 * 1000; // 2 menit
+
+  const GameState = {
+    getUang() {
+      return parseInt(localStorage.getItem("uang") || "0", 10);
+    },
+    setUang(val) {
+      localStorage.setItem("uang", String(val));
+    },
+    addUang(delta) {
+      const v = this.getUang() + delta;
+      this.setUang(v);
+      return v;
+    },
+
+    getEnergi() {
+      // default 50 hanya kalau belum ada sama sekali
+      return parseInt(localStorage.getItem("energi") || String(MAX_ENERGI), 10);
+    },
+    setEnergi(val) {
+      const clamped = Math.max(0, Math.min(MAX_ENERGI, val));
+      localStorage.setItem("energi", String(clamped));
+    },
+    decEnergi(n = 1) {
+      const before = this.getEnergi();
+      const after  = Math.max(0, before - n);
+      this.setEnergi(after);
+
+      // kalau energi turun dari penuh dan belum ada lastRegen → mulai catat waktu regen
+      if (after < MAX_ENERGI && !localStorage.getItem("lastRegen")) {
+        localStorage.setItem("lastRegen", String(Date.now()));
+      }
+      return after;
+    },
+
+    init() {
+      if (localStorage.getItem("energi") === null) {
+        this.setEnergi(MAX_ENERGI);
+      }
+      if (localStorage.getItem("uang") === null) {
+        this.setUang(0);
+      }
+      // lastRegen boleh kosong, nanti diisi ketika energi pertama kali berkurang
+    }
+  };
+
+  function regenEnergi(){
+    const lastStr = localStorage.getItem("lastRegen");
+    if (!lastStr) return; // belum butuh regen
+
+    let energi = GameState.getEnergi();
+    if (energi >= MAX_ENERGI) {
+      // sudah penuh → hentikan regen
+      localStorage.removeItem("lastRegen");
+      return;
+    }
+
+    const now  = Date.now();
+    let last   = parseInt(lastStr, 10);
+    const diff = now - last;
+
+    if (diff < REGEN_INTERVAL_MS) return;
+
+    const langkah = Math.floor(diff / REGEN_INTERVAL_MS);
+    if (langkah <= 0) return;
+
+    energi += langkah;
+    if (energi > MAX_ENERGI) energi = MAX_ENERGI;
+    GameState.setEnergi(energi);
+
+    if (energi >= MAX_ENERGI) {
+      localStorage.removeItem("lastRegen");
+    } else {
+      last = last + langkah * REGEN_INTERVAL_MS;
+      localStorage.setItem("lastRegen", String(last));
+    }
+  }
+
+  GameState.init();
+  regenEnergi();
+  setInterval(regenEnergi, 30000); // cek regen tiap 30 detik
+
+  function updateTopBar(){
+    regenEnergi();
+    document.getElementById("teksUang").innerText   = GameState.getUang();
+    document.getElementById("teksEnergi").innerText = GameState.getEnergi();
+  }
+
+  window.addEventListener("DOMContentLoaded", updateTopBar);
+  setInterval(updateTopBar, 1000);
+
+  /* ====== DATA SCAN: SESUAI DENGAN NILAI selectedEvidence ====== */
+  const evidenceData = {
+    korban: {
+      img: "korban.png",
+      text: `
+        <div class="info-item"><b>Nama:</b> Arini Dhira Wijaya</div>
+        <div class="info-item"><b>Usia:</b> 22 Tahun</div>
+        <div class="info-item"><b>Jenis Kelamin:</b> Perempuan</div>
+        <div class="info-item"><b>Hasil Forensik:</b> Korban meninggal karena kehabisan darah diakibatkan luka tusuk sebanyak 5 kali menggunakan senjata tajam.</div>
+      `
+    },
+    gunting: {
+      img: "gunting.png",
+      text: `
+        <div class="info-item"><b>Nama:</b> Gunting alat pembunuhan</div>
+        <div class="info-item"><b>Ukuran:</b> 20 cm</div>
+        <div class="info-item"><b>Temuan:</b> Alat pembunuhan milik perpustakaan ditemukan di meja pustakawan. Terdapat sidik jari pustakawan, Rara, dan Radit.</div>
+      `
+    },
+    id: {
+      img: "id perpus.png",
+      text: `
+        <div class="info-item"><b>Nama:</b> Kartu ID milik anggota perpustakaan</div>
+        <div class="info-item"><b>Ukuran:</b> 85,6 x 54 mm</div>
+        <div class="info-item"><b>Temuan:</b> ID milik anggota perpustakaan bernama Dian Rara Winarto yang berkunjung pada hari kejadian.</div>
+      `
+    },
+    buku: {
+      img: "buku hari.png",
+      text: `
+        <div class="info-item"><b>Nama:</b> Buku berjudul "100 Hari Bersamamu"</div>
+        <div class="info-item"><b>Ukuran:</b> 17,6 x 25 cm dengan 500 halaman</div>
+        <div class="info-item"><b>Temuan:</b> Buku ini dalam status peminjaman oleh nomor ID 1369, dan bukunya berlumuran darah korban.</div>
+      `
+    },
+    bulpen: {
+      img: "bulpen.png",
+      text: `
+        <div class="info-item"><b>Nama:</b> Bulpen 0.5</div>
+        <div class="info-item"><b>Ukuran:</b> 150 mm</div>
+        <div class="info-item"><b>Temuan:</b> Bulpen ini milik Radit yang tertinggal di meja pustakawan, dengan sidik jari milik Radit dan Arini</div>
+      `
+    }
+  };
+
+  // nilai yang disimpan dari asa3: goLab('korban' / 'gunting' / 'id' / 'buku' / 'bulpen')
+  const selectedKey = localStorage.getItem("selectedEvidence") || "korban";
+  const data        = evidenceData[selectedKey] || evidenceData["korban"];
+
+  const scanItem  = document.getElementById("scanItem");
+  const scanLine  = document.getElementById("scanLine");
+  const infoBoard = document.getElementById("infoBoard");
+  const infoText  = document.getElementById("infoText");
+
+  // pasang gambar barang di papan scan (kalau datanya ada)
+  if (data && scanItem) {
+    scanItem.src = data.img;
+  }
+
+  // jalankan animasi scan
+  if (scanLine) {
+    requestAnimationFrame(() => {
+      scanLine.classList.add("run");
+    });
+
+    // setelah scan selesai -> munculkan info + hint (kalau pertama kali)
+    scanLine.addEventListener("animationend", () => {
+      if (data && infoText && infoBoard) {
+        infoText.innerHTML = data.text;
+        infoBoard.classList.add("show");
+      }
+      maybeShowLabHint();
+    });
+  }
+
+  // Fungsi: tampilkan hint sekali saja setelah scan pertama (KHUSUS KASUS 2)
+  function maybeShowLabHint(){
+    if (localStorage.getItem("labHintKasus2Shown") === "true") return;
+
+    const intro   = document.getElementById('introOverlay');
+    const introOk = document.getElementById('introOk');
+    if (!intro || !introOk) return;
+
+    localStorage.setItem("labHintKasus2Shown", "true");
+
+    intro.style.display = 'flex';
+    introOk.addEventListener('click', () => {
+      intro.style.display = 'none';
+    }, { once:true });
+  }
+
+  /* ====== BUKA/TUTUP OVERLAY OPTION ====== */
+  const btnMenu    = document.getElementById('btnMenu');
+  const optOverlay = document.getElementById('optOverlay');
+  const optClose   = document.getElementById('optClose');
+
+  if (btnMenu && optOverlay && optClose) {
+    btnMenu.addEventListener('click', () => {
+      optOverlay.classList.add('active');
+    });
+
+    optClose.addEventListener('click', (e) => {
+      e.stopPropagation();
+      optOverlay.classList.remove('active');
+    });
+
+    optOverlay.addEventListener('click', (e) => {
+      if (e.target === optOverlay) {
+        optOverlay.classList.remove('active');
+      }
+    });
+  }
+
+  // tombol ulang & kembali
+  const btnUlang   = document.getElementById('optUlang');
+  const btnKembali = document.getElementById('optKembali');
+
+  if (btnUlang) {
+    btnUlang.addEventListener('click', (e) => {
+      e.stopPropagation();
+      window.location.reload();
+    });
+  }
+
+  if (btnKembali) {
+    btnKembali.addEventListener('click', (e) => {
+      e.stopPropagation();
+      window.location.href = "ss.html"; 
+    });
+  }
+
+  /* ===== MUSIK: TOGGLE DENGAN TOMBOL optHidup ===== */
+  const bgm      = document.getElementById('bgm');
+  const soundBtn = document.getElementById('optHidup');
+
+  const imgMati  = 'tombol mati.png';
+  const imgHidup = 'tombol hidup.png';
+
+  window.addEventListener('load', () => {
+    if (soundBtn) soundBtn.src = imgMati;
+  });
+
+  if (soundBtn) {
+    soundBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+
+      if (bgm.paused) {
+        bgm.play().catch(()=>{});
+        soundBtn.src = imgMati;
+      } else {
+        bgm.pause();
+        soundBtn.src = imgHidup;
+      }
+    });
+  }
+</script>
+</body>
+</html>

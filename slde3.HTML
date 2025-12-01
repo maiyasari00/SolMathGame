@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SOLMATH — Percakapan</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:#0b0f16;
+    display:flex;justify-content:center;align-items:center;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+    color:#e8eefc;
+  }
+  .frame{
+    width:min(100vw,1100px);
+    aspect-ratio:16/9;
+    position:relative;overflow:hidden;
+    border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.45);
+    background:#0a0f1c;
+  }
+  /* background ilustrasi */
+  .stage{position:absolute; inset:0}
+  .stage img.bg{
+    width:100%; height:100%; object-fit:cover; display:block;
+    user-select:none; -webkit-user-drag:none;
+  }
+
+  /* dialog bar */
+  .dialog{
+    position:absolute; left:0; right:0; bottom:0;
+    min-height:22%;
+    background:#5a3f31; /* coklat */
+    border-top:4px solid rgba(0,0,0,.25);
+    padding:18px 110px 18px 24px; /* kasih ruang untuk tombol skip di kanan */
+    display:flex; align-items:center;
+  }
+  .dialog p{
+    line-height:1.5; font-size:18px; font-weight:600; color:#ffeedd;
+    text-shadow:0 1px 0 rgba(0,0,0,.35);
+  }
+
+  /* tombol Skip */
+  #btnSkip{
+    position:absolute; right:18px; bottom:18px;
+    width:90px; cursor:pointer; user-select:none;
+    transition:transform .12s ease, filter .12s ease;
+    filter:drop-shadow(0 6px 16px rgba(0,0,0,.5));
+  }
+  #btnSkip:hover{transform:scale(1.05)}
+  #btnSkip:active{transform:scale(.95)}
+
+  /* hint kecil opsional */
+  .hint{
+    position:absolute; right:12px; top:12px; font-size:12px; color:#becce6;
+    background:rgba(0,0,0,.35); padding:6px 10px; border-radius:999px;
+  }
+</style>
+</head>
+<body>
+  <audio id="bgm" src="bgmusic.mp3" autoplay loop></audio>
+  <main class="frame">
+    <section class="stage" aria-label="Percakapan pembuka">
+      <img class="bg" src="percakapan singkat template.png" alt="Ruang detektif — papan kasus dan meja">
+
+      <!-- Bar dialog -->
+      <div class="dialog">
+        <p id="dialogText">
+          <!-- diisi via JS -->
+        </p>
+      </div>
+
+      <!-- Tombol Skip -->
+      <img id="btnSkip" src="tombol skipp.png" alt="Skip">
+
+      <div class="hint">Enter/Spasi = Skip</div>
+    </section>
+  </main>
+
+<script>
+  // ambil nama dari slide sebelumnya
+  const name = (localStorage.getItem('solmath_name') || 'Detektif').trim();
+
+  const dialogEl = document.getElementById('dialogText');
+  const fullText =
+    `Hallo detektif ${name}. Selamat datang di kantor SolMath, saya Dikta sebagai partner kamu untuk memecahkan kasusmu. ` +
+    `Kita sudah mempunyai kasus pertama yang perlu kamu tangani saat ini. Penyelidikan kali ini adalah menangani kasus ` +
+    ` pencurian sepatu milik Ahmad.Ayo segera menuju tempat kejadian!`;
+
+  // efek ketik sederhana (boleh dihapus kalau tidak perlu)
+  let i = 0;
+  function typeNext(){
+    if(i <= fullText.length){
+      dialogEl.textContent = fullText.slice(0, i++);
+      requestAnimationFrame(()=> setTimeout(typeNext, 10)); // atur kecepatan
+    }
+  }
+  typeNext();
+
+  // tombol Skip
+  const btnSkip = document.getElementById('btnSkip');
+  const goNext = () => {
+    // lanjut ke slide berikutnya
+    window.location.href = 'slde4.html'; // ganti sesuai nama file tujuanmu
+  };
+  btnSkip.addEventListener('click', goNext);
+
+  // keyboard: Enter / Spasi = skip
+  window.addEventListener('keydown', e=>{
+    if(e.key === 'Enter' || e.key === ' '){
+      e.preventDefault();
+      goNext();
+    }
+  });
+</script>
+</body>
+</html>

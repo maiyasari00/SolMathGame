@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SOLMATH — Pelaku Salah</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    width:100vw;height:100vh;overflow:hidden;
+    background:#0b0f16;
+    display:flex;justify-content:center;align-items:center;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+  }
+  .bg{
+    position:absolute;inset:0;
+    width:100%;height:100%;
+    object-fit:contain;
+    background:#0b0f16;
+    user-select:none;-webkit-user-drag:none;
+    z-index:0;
+  }
+  .frame{
+    width:min(100vw, calc(100vh * 16/9));
+    aspect-ratio:16/9;
+    position:relative;
+    overflow:hidden;
+    border-radius:18px;
+    box-shadow:0 24px 60px rgba(0,0,0,.45);
+    background:#000;
+  }
+  .full-img{
+    position:absolute;inset:0;
+    width:100%;height:100%;
+    object-fit:contain;
+  }
+</style>
+</head>
+<body>
+<audio id="bgm" src="bgmusic.mp3" autoplay loop></audio>
+<div class="frame">
+  <img src="template.png" class="bg" alt="Pelaku salah">
+  <img src="salah pelaku.png" alt="Pelaku Salah" class="full-img">
+</div>
+
+<script>
+// setelah 5 detik, kembali ke fai5.html
+setTimeout(function(){
+  window.location.href = "asa5.html";
+}, 5000);
+
+// musik toggle
+const bgm = document.getElementById("bgm");
+const soundBtn = document.getElementById("optHidup");
+const imgMati="tombol mati.png";
+const imgHidup="tombol hidup.png";
+
+window.addEventListener("load",()=>{ soundBtn.src=imgMati; });
+soundBtn.addEventListener("click",(e)=>{
+  e.stopPropagation();
+  if(bgm.paused){
+    bgm.play().catch(()=>{});
+    soundBtn.src=imgMati;
+  }else{
+    bgm.pause();
+    soundBtn.src=imgHidup;
+  }
+});
+</script>
+</body>
+</html>

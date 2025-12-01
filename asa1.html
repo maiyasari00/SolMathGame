@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SOLMATH — Slide 4 • Transition Police Line</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:#0b0f16;display:grid;place-items:center;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:#e8eefc}
+  .frame{width:min(100vw,1100px);aspect-ratio:16/9;position:relative;overflow:hidden;border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.45);background:#0a0f1c}
+  .stage{position:absolute;inset:0}
+  .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;user-select:none;-webkit-user-drag:none;filter:brightness(.98)}
+
+  /* POLICE LINE strips */
+  .tapes{position:absolute;inset:0;pointer-events:none}
+  .tape{position:absolute;left:-120%; width:160%; opacity:.98; filter:drop-shadow(0 8px 18px rgba(0,0,0,.5))}
+  .tape.r{left:auto; right:-120%}
+
+  /* Individual positions roughly following your Illustration 2 */
+  .t1{top:4%;  transform:rotate(-3deg)}
+  .t2{top:18%; transform:rotate( -2deg)}
+  .t3{top:33%; transform:rotate(  2deg)}
+  .t4{top:49%; transform:rotate( -6deg)}
+  .t5{top:65%; transform:rotate(  4deg)}
+
+  /* Animations */
+  @keyframes slideL{0%{transform:translateX(0) rotate(var(--rot,0deg))}100%{transform:translateX(-40%) rotate(var(--rot,0deg));opacity:0}}
+  @keyframes slideR{0%{transform:translateX(0) rotate(var(--rot,0deg))}100%{transform:translateX(40%) rotate(var(--rot,0deg));opacity:0}}
+
+  .goL{animation:slideL 2.5s ease-in forwards}
+  .goR{animation:slideR 2.5s ease-in forwards}
+
+  /* Staggered delays for nicer cascade */
+  .t1{animation-delay:.05s}
+  .t2{animation-delay:.18s}
+  .t3{animation-delay:.31s}
+  .t4{animation-delay:.44s}
+  .t5{animation-delay:.57s}
+
+  /* Skip button */
+  .skip{position:absolute; right:18px; bottom:18px; padding:10px 16px; border-radius:12px; background:rgba(0,0,0,.45); color:#fff; border:1px solid rgba(255,255,255,.2); cursor:pointer; z-index:5}
+  .skip:hover{background:rgba(255,255,255,.1)}
+</style>
+</head>
+<body>
+  <audio id="bgm" src="bgmusic.mp3" autoplay loop></audio>
+  <main class="frame">
+    <section class="stage" aria-label="Transition">
+      <!-- Ganti nama file berikut sesuai asetmu (Illustration 3 = papan bersih) -->
+      <img class="bg" src="police line template5.png" alt="Papan TKP">
+
+      <!-- Police line bundle (pakai satu file untuk semua strip, diduplikasi & diposisikan) -->
+      <div class="tapes" id="tapes">
+        <!-- Tips: gunakan file yang berisi kumpulan garis police line transparan -->
+        <img class="tape t1 goL" src="garis polisi.png" alt="Police line">
+        <img class="tape t2 r goR" src="garis polisi.png" alt="Police line">
+        <img class="tape t3 goL" src="garis polisi.png" alt="Police line">
+        <img class="tape t4 r goR" src="garis polisi.png" alt="Police line">
+        <img class="tape t5 goL" src="garis polisi.png" alt="Police line">
+      </div>
+
+      <button class="skip" id="btnSkip">Skip »</button>
+    </section>
+  </main>
+
+<script>
+(function(){
+  const NEXT = 'asa2.html';          // ← halaman tujuan setelah transition
+  const DURATION = 3000;               // total waktu (ms) sebelum auto-redirect
+
+  // Biarkan animasi jalan, lalu auto-redirect
+  const goNext = ()=> window.location.href = NEXT;
+  const to = setTimeout(goNext, DURATION);
+
+  // Tombol Skip untuk langsung lanjut
+  document.getElementById('btnSkip').addEventListener('click', ()=>{
+    clearTimeout(to);
+    goNext();
+  });
+
+  // Aksesibilitas: Enter/Spasi untuk skip
+  window.addEventListener('keydown', e=>{
+    if(e.key==='Enter' || e.key===' '){ e.preventDefault(); clearTimeout(to); goNext(); }
+  });
+})();
+</script>
+</body>
+</html>

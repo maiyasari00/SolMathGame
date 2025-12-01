@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SOLMATH — Akhir Kasus</title>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body{
+    width:100vw;
+    height:100vh;
+    overflow:hidden;
+    background:#0b0f16;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+  }
+
+  .frame{
+    width:min(100vw, calc(100vh * 16/9));
+    aspect-ratio:16/9;
+    position:relative;
+    overflow:hidden;
+    border-radius:18px;
+    box-shadow:0 24px 60px rgba(0,0,0,.45);
+    background:#000;
+  }
+
+  .bg-main{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;        /* supaya gambar penuh */
+    background:#0b0f16;
+  }
+
+  /* OVERLAY POPUP AKHIR GAME */
+  .ending-overlay{
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,0.55);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:10;
+  }
+
+  .ending-card{
+    width:380px;
+    max-width:90%;
+    background:#fff7e6;
+    border-radius:20px;
+    padding:20px 22px 22px;
+    box-shadow:0 16px 40px rgba(0,0,0,.5);
+    text-align:center;
+  }
+
+  .ending-title{
+    font-size:20px;
+    font-weight:800;
+    color:#4b2c24;
+    margin-bottom:10px;
+  }
+
+  .ending-text{
+    font-size:16px;
+    line-height:1.5;
+    color:#3b2620;
+    margin-bottom:16px;
+  }
+
+  .ending-ok{
+    border:none;
+    border-radius:999px;
+    padding:9px 22px;
+    font-size:16px;
+    font-weight:600;
+    cursor:pointer;
+    color:#fff;
+    background:#c0693d;
+    box-shadow:0 4px 10px rgba(0,0,0,.35);
+    transition:0.15s transform ease, 0.15s box-shadow ease, 0.15s filter ease;
+  }
+
+  .ending-ok:hover{
+    filter:brightness(1.05);
+    transform:translateY(-1px);
+    box-shadow:0 6px 14px rgba(0,0,0,.45);
+  }
+
+  .ending-ok:active{
+    transform:translateY(1px) scale(0.97);
+    box-shadow:0 2px 6px rgba(0,0,0,.5);
+  }
+</style>
+</head>
+
+<body>
+  <audio id="bgm" src="bgmusic.mp3" autoplay loop></audio>
+  <div class="frame">
+    <!-- ganti nama file sesuai gambar kamu -->
+    <img src="awal template.png" class="bg-main" alt="SOLMATH Ending">
+
+    <!-- POPUP AKHIR GAME -->
+    <div class="ending-overlay">
+      <div class="ending-card">
+        <div class="ending-title">Terima kasih sudah bermain!</div>
+        <div class="ending-text">
+          Kamu sudah mencapai akhir kasus dari game ini.<br>
+          Tunggu versi terbaru yaa!
+        </div>
+        <button id="btnExit" class="ending-ok">OK</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const btnExit = document.getElementById('btnExit');
+
+  btnExit.addEventListener('click', () => {
+    // Kalau ingin menghapus progress game:
+    // localStorage.clear();
+
+    // Coba tutup jendela (di WebView / APK biasanya berfungsi)
+    window.close();
+
+    // Fallback kalau browser tidak mengizinkan close:
+    window.location.href = "about:blank";
+    // atau bisa diarahkan ke halaman lain, misalnya menu awal:
+    // window.location.href = "menu_awal.html";
+  });
+</script>
+</body>
+</html>

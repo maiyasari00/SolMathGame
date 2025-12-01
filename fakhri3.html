@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SOLMATH — Barang Bukti</title>
+
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+
+  body{
+    width:100vw;height:100vh;overflow:hidden;
+    background:#0b0f16; display:flex; justify-content:center; align-items:center;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+  }
+
+  .frame{
+    width: min(100vw, calc(100vh * 16 / 9));
+    aspect-ratio:16/9;
+    position:relative;
+    overflow:hidden;
+    border-radius:18px;
+    box-shadow:0 24px 60px rgba(0,0,0,.45);
+    background:#000;
+  }
+
+  .bg-main{
+    position:absolute; inset:0;
+    width:100%; height:100%;
+    object-fit:contain;
+    background:#0b0f16;
+  }
+
+  .evidence{
+    position:absolute;
+    cursor:pointer;
+    transition:.15s transform ease, .15s filter ease;
+    z-index:5;
+  }
+  .evidence:hover{
+    transform:translateY(-3px) scale(1.03);
+    filter:drop-shadow(0 6px 8px rgba(0,0,0,.5));
+  }
+
+  .catatan { width:7%; left:27%; top:32%; }
+  .buku  { width:7%; left:46%; top:35%; }
+  .karciss  { width:13%; left:62%; top:36%; }
+  .kalku   { width:7%; left:27.5%; top:56.5%; }
+
+  .btn-setting{
+    position:absolute;
+    top:2%;
+    left:12%;
+    width:6%;
+    cursor:pointer;
+    transition:0.2s;
+    z-index:50;
+  }
+  .btn-setting:hover{
+    transform:scale(1.05);
+    filter:brightness(1.2);
+  }
+
+  .btn-menu{ position:absolute; bottom:3%; width:18%; cursor:pointer; transition:0.2s; }
+  .btn-bukti{ left:21%; }
+  .btn-lab{ left:41%; }
+  .btn-tersangka{ left:61%; }
+
+  .btn-menu{
+    cursor:pointer;
+    transition:0.2s transform ease, 0.2s filter ease;
+    transform-origin:center;
+  }
+  .btn-menu:hover{
+    transform:scale(1.05);
+    filter:brightness(1.2) drop-shadow(0 6px 8px rgba(0,0,0,.45));
+  }
+  .btn-menu:active{
+    transform:scale(0.97);
+    filter:brightness(0.95);
+  }
+
+  .status-energi{
+    position:absolute;
+    top:3%;
+    left:25%;
+    font-size:22px;
+    font-weight:800;
+    color:#ffd45e;
+    text-shadow:0 2px 6px rgba(0,0,0,.8);
+    z-index:20;
+    pointer-events:none;
+  }
+
+  .status-uang{
+    position:absolute;
+    top:3%;
+    right:35%;
+    font-size:22px;
+    font-weight:800;
+    color:#ffd45e;
+    text-shadow:0 2px 6px rgba(0,0,0,.8);
+    z-index:20;
+    pointer-events:none;
+  }
+
+  /* ====== OVERLAY OPTION (papan pengaturan) ====== */
+  .overlay{
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,.55);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:100;
+  }
+  .overlay.active{display:flex;}
+
+  .panel{
+    position:relative;
+    transform:scale(0.9);
+    transform-origin:center;
+  }
+  .panel img{
+    display:block;
+    max-height:70vh;
+    width:auto;
+  }
+  .optBtns{position:absolute;inset:0;}
+  .opt{position:absolute;cursor:pointer;}
+
+  /* ====== OVERLAY INTRO AWAL (instruksi barang bukti) ====== */
+  .intro-overlay{
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,0.55);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:90;
+  }
+
+  .intro-card{
+    width:360px;
+    background:#fbe7cf;
+    border-radius:18px;
+    padding:18px 20px 20px;
+    box-shadow:0 16px 40px rgba(0,0,0,.45);
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    text-align:center;
+  }
+
+  .intro-title{
+    font-size:20px;
+    font-weight:700;
+    color:#4b2c24;
+  }
+
+  .intro-text{
+    font-size:16px;
+    line-height:1.4;
+    color:#2b1a18;
+  }
+
+  .intro-ok{
+    margin-top:8px;
+    border:none;
+    border-radius:999px;
+    padding:8px 18px;
+    font-size:16px;
+    font-weight:600;
+    cursor:pointer;
+    color:#ffffff;
+    background:#c0693d;
+    box-shadow:0 4px 8px rgba(0,0,0,.35);
+  }
+
+  .intro-ok:active{
+    transform:scale(0.97);
+    box-shadow:0 2px 5px rgba(0,0,0,.45);
+  }
+</style>
+</head>
+
+<body>
+  <audio id="bgm" src="bgmusic.mp3" autoplay loop></audio>
+
+  <div class="frame">
+    <img src="slide barang bukti.png" class="bg-main" alt="Barang Bukti">
+
+    <!-- tombol pengaturan kiri atas (buka overlay) -->
+    <img src="tombol pengaturan.png" class="btn-setting" id="btnMenu" alt="Pengaturan">
+
+    <!-- angka energi & uang -->
+    <div class="status-energi"><span id="teksEnergi">0</span></div>
+    <div class="status-uang"><span id="teksUang">0</span></div>
+
+    <!-- ===== OVERLAY INTRO AWAL (INSTRUKSI) ===== -->
+    <div id="introOverlay" class="intro-overlay">
+      <div class="intro-card">
+        <div class="intro-title">Instruksi</div>
+        <div class="intro-text">
+          Tekan barang bukti yang ingin kamu tahu kebenarannya!<br>
+          Barang bukti akan diteliti di laboratorium SolMath.
+        </div>
+        <button id="introOk" class="intro-ok">OK</button>
+      </div>
+    </div>
+
+    <!-- BARANG BUKTI (klik menuju lab) -->
+    <img src="catatan.png" class="evidence catatan" alt="Catatan" onclick="goLab('catatan')">
+    <img src="buku.png"   class="evidence buku"   alt="Buku"   onclick="goLab('buku')">
+    <img src="karciss.png"   class="evidence karciss"   alt="Karcis"   onclick="goLab('karciss')">
+    <img src="kalku.png"    class="evidence kalku"    alt="Kalkulator"    onclick="goLab('kalku')">
+
+    <!-- MENU BAWAH -->
+    <img src="barang_bukti.png" class="btn-menu btn-bukti" alt="Barang Bukti" onclick="window.location.href='fakhri3.html'">
+    <img src="laboratorium.png" class="btn-menu btn-lab" alt="Laboratorium" onclick="window.location.href='fakhri4.html'">
+    <img src="tersangka.png" class="btn-menu btn-tersangka" alt="Tersangka" onclick="window.location.href='fakhri5.html'">
+
+    <!-- ===== OVERLAY OPTION (papan pengaturan) ===== -->
+    <div class="overlay" id="optOverlay">
+      <div class="panel">
+        <img src="papan option.png" alt="Papan Opsi" id="optBoard">
+        <div class="optBtns">
+          <img class="opt" id="optHidup"   src="tombol mati.png"      style="left:45%; top:26%; width:35%">
+          <img class="opt" id="optKembali" src="tombol kembali.png"   style="left:45%; top:68%; width:35%">
+          <img class="opt" id="optUlang"   src="tombol ulang.png"     style="left:45%; top:47%; width:35%">
+          <img class="opt" id="optClose"   src="tombol silang.png"    style="right:7%; top:6%;  width:6%">
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  /* ===== GAME STATE GLOBAL (SAMA DENGAN SLIDE LAIN) ===== */
+  const MAX_ENERGI = 50;
+  const REGEN_INTERVAL_MS = 2 * 60 * 1000; // 2 menit
+
+  const GameState = {
+    getUang() {
+      return parseInt(localStorage.getItem("uang") || "0", 10);
+    },
+    setUang(val) {
+      localStorage.setItem("uang", String(val));
+    },
+    addUang(delta) {
+      const v = this.getUang() + delta;
+      this.setUang(v);
+      return v;
+    },
+
+    getEnergi() {
+      return parseInt(localStorage.getItem("energi") || String(MAX_ENERGI), 10);
+    },
+    setEnergi(val) {
+      const clamped = Math.max(0, Math.min(MAX_ENERGI, val));
+      localStorage.setItem("energi", String(clamped));
+    },
+    decEnergi(n = 1) {
+      const before = this.getEnergi();
+      const after  = Math.max(0, before - n);
+      this.setEnergi(after);
+
+      if (after < MAX_ENERGI && !localStorage.getItem("lastRegen")) {
+        localStorage.setItem("lastRegen", String(Date.now()));
+      }
+      return after;
+    },
+
+    init() {
+      if (localStorage.getItem("energi") === null) {
+        this.setEnergi(MAX_ENERGI);
+      }
+      if (localStorage.getItem("uang") === null) {
+        this.setUang(0);
+      }
+    }
+  };
+
+  function regenEnergi() {
+    const now     = Date.now();
+    const lastStr = localStorage.getItem("lastRegen");
+    if (!lastStr) return;
+
+    let last = parseInt(lastStr, 10);
+    const diff = now - last;
+    if (diff < REGEN_INTERVAL_MS) return;
+
+    const langkah = Math.floor(diff / REGEN_INTERVAL_MS);
+    if (langkah <= 0) return;
+
+    let energi = GameState.getEnergi();
+
+    if (energi >= MAX_ENERGI) {
+      localStorage.removeItem("lastRegen");
+      return;
+    }
+
+    energi += langkah;
+    if (energi > MAX_ENERGI) energi = MAX_ENERGI;
+    GameState.setEnergi(energi);
+
+    if (energi >= MAX_ENERGI) {
+      localStorage.removeItem("lastRegen");
+    } else {
+      const lastBaru = last + langkah * REGEN_INTERVAL_MS;
+      localStorage.setItem("lastRegen", String(lastBaru));
+    }
+  }
+
+  GameState.init();
+  regenEnergi();
+  setInterval(regenEnergi, 30000);
+
+  function updateTopBar(){
+    regenEnergi();
+    document.getElementById("teksUang").innerText   = GameState.getUang();
+    document.getElementById("teksEnergi").innerText = GameState.getEnergi();
+  }
+
+  window.addEventListener("DOMContentLoaded", updateTopBar);
+  setInterval(updateTopBar, 1000);
+
+   /* ===== KLIK BARANG → KE LAB KASUS 2 ===== */
+  function goLab(item){
+    const energiSekarang = GameState.getEnergi();
+    if (energiSekarang <= 0){
+      alert("Energi habis! Tidak bisa scan barang.");
+      return;
+    }
+
+    GameState.decEnergi(1);
+    updateTopBar();
+
+    localStorage.setItem("selectedEvidence", item);
+    window.location.href = "fakhri4.html"; // lab kasus 2
+  }
+
+  /* ====== BUKA/TUTUP OVERLAY OPTION ====== */
+  const btnMenu    = document.getElementById('btnMenu');
+  const optOverlay = document.getElementById('optOverlay');
+  const optClose   = document.getElementById('optClose');
+
+  btnMenu.addEventListener('click', () => {
+    optOverlay.classList.add('active');
+  });
+
+  optClose.addEventListener('click', (e) => {
+    e.stopPropagation();
+    optOverlay.classList.remove('active');
+  });
+
+  optOverlay.addEventListener('click', (e) => {
+    if(e.target === optOverlay){
+      optOverlay.classList.remove('active');
+    }
+  });
+
+  const btnUlang = document.getElementById('optUlang');
+  const btnKembali = document.getElementById('optKembali');
+
+  btnUlang.addEventListener('click', (e) => {
+    e.stopPropagation();
+    window.location.reload();
+  });
+
+  btnKembali.addEventListener('click', (e) => {
+    e.stopPropagation();
+    window.location.href = "ss.html";
+  });
+
+  /* ===== MUSIK: TOGGLE DENGAN TOMBOL optHidup ===== */
+  const bgm = document.getElementById('bgm');
+  const soundBtn = document.getElementById('optHidup');
+
+  const imgMati  = 'tombol mati.png';
+  const imgHidup = 'tombol hidup.png';
+
+  window.addEventListener('load', () => {
+    soundBtn.src = imgMati;
+  });
+
+  soundBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+
+    if (bgm.paused) {
+      bgm.play().catch(()=>{});
+      soundBtn.src = imgMati;
+    } else {
+      bgm.pause();
+      soundBtn.src = imgHidup;
+    }
+  });
+
+  // <<< END DITAMBAHKAN
+
+  // ===== OVERLAY INTRO SLIDE 6: MUNCUL SEKALI SAJA =====
+  window.addEventListener('load', () => {
+    const intro   = document.getElementById('introOverlay');
+    const introOk = document.getElementById('introOk');
+
+    if (!intro || !introOk) return;
+
+    const sudah = localStorage.getItem('slide6IntroShown') === 'true';
+
+    if (sudah) {
+      intro.style.display = 'none';
+      return;
+    }
+
+    intro.style.display = 'flex';
+
+    introOk.addEventListener('click', () => {
+      intro.style.display = 'none';
+      localStorage.setItem('slide6IntroShown', 'true');
+    }, { once:true });
+  });
+
+</script>
+</body>
+</html>

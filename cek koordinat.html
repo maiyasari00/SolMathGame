@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Cek Koordinat Klik Gambar (Persen)</title>
+
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; }
+  img {
+    max-width: 100%;
+    border: 2px solid #444;
+    border-radius: 10px;
+    cursor: crosshair;
+  }
+  #koordinat {
+    margin-top: 15px;
+    padding: 10px 15px;
+    background: #e3e3e3;
+    border-radius: 10px;
+    font-size: 18px;
+  }
+</style>
+</head>
+
+<body>
+
+<h2>Klik Pada Gambar untuk Mendapatkan Koordinat Persen</h2>
+
+<img id="gambar" src="perpus2 template.png" alt="contoh gambar">
+
+<div id="koordinat">Klik gambar untuk mendapatkan koordinat...</div>
+
+<script>
+  const gambar = document.getElementById("gambar");
+  const display = document.getElementById("koordinat");
+
+  gambar.addEventListener("click", function (e) {
+    const rect = gambar.getBoundingClientRect();
+
+    // posisi pixel
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // ubah ke persen
+    const xPercent = ((x / rect.width) * 100).toFixed(2);
+    const yPercent = ((y / rect.height) * 100).toFixed(2);
+
+    display.textContent = `left: ${xPercent}%, top: ${yPercent}%`;
+  });
+</script>
+
+</body>
+</html>

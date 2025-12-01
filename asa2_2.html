@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SOLMATH — TKP Kasus 1</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:#0b0f16;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+    display:grid;
+    place-items:center;
+  }
+
+  /* Bingkai utama 16:9 */
+  .frame{
+    width:min(100vw,1100px);
+    aspect-ratio:16/9;
+    position:relative;
+    overflow:hidden;
+    border-radius:18px;
+    box-shadow:0 24px 60px rgba(0,0,0,.45);
+    background:#000;
+  }
+
+  .stage{position:absolute;inset:0;}
+
+  /* Latar TKP */
+  .bg{
+    position:absolute;inset:0;
+    width:100%;height:100%;
+    object-fit:cover;
+    user-select:none;
+    -webkit-user-drag:none;
+  }
+
+  /* HUD kiri atas: menu + timer */
+  .hud{
+    position:absolute;
+    left:12px;top:12px;
+    display:flex;
+    gap:10px;
+    align-items:center;
+    z-index:5;
+  }
+  .hud img{
+    height:60px;
+    display:block;
+    cursor:pointer;
+    user-select:none;
+    -webkit-user-drag:none;
+    filter:drop-shadow(0 4px 10px rgba(0,0,0,.45));
+  }
+
+  .timerBox{
+    height:60px;
+    width:200px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:700;
+    font-size:20px;
+    color:#fff;
+    line-height:1;
+    background:url("timer_1.png") no-repeat left center / 100% 100%;
+  }
+
+  /* HOTSPOT */
+  .hot{
+    position:absolute;
+    cursor:pointer;
+  }
+  .hot::after{content:"";position:absolute;inset:0;}
+    /* HOTSPOT JEBakan (barang yang salah) → muncul tanda silang merah */
+  .decoy{
+    position:absolute;
+    cursor:pointer;
+  }
+
+  .decoy::before{
+    content:"✖";
+    position:absolute;
+    left:0%;
+    top:0%;
+    inset:0;
+    display:flex;
+    font-size:3vw;            /* ukuran huruf X, bisa kamu kecilkan/besarkan */
+    color:#ff3333;
+    text-shadow:0 0 8px rgba(0,0,0,.8);
+    opacity:0;
+    transition:opacity .15s ease;
+    pointer-events:none;
+  }
+
+  .decoy.clicked::before{
+    opacity:1;                /* saat diklik, X-nya muncul */
+  }
+
+  /* Tombol PETUNJUK */
+  .hintBtn{
+    position:absolute;
+    right:18px;
+    bottom:18px;
+    z-index:6;
+    cursor:pointer;
+    background:none;
+    border:none;
+    padding:0;
+    outline:none;
+  }
+  .hintBtn img{
+    height:86px;
+    user-select:none;
+    -webkit-user-drag:none;
+    filter:drop-shadow(0 8px 18px rgba(0,0,0,.55));
+    display:block;
+  }
+
+  .ring{
+    position:absolute;
+    border:4px solid red;         /* lingkaran merah */
+    border-radius:900px;
+    pointer-events:none;
+    box-shadow:0 0 18px rgba(255,0,0,.8);
+    z-index:8;
+  }
+
+  .qbar{
+    position:absolute;left:0;right:0;bottom:0;
+    display:flex;justify-content:center;align-items:center;
+    padding:14px 18px;
+    background:linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.25) 20%, rgba(0,0,0,.55) 100%);
+  }
+
+  /* Overlay papan option (ilustrasi ke-2) */
+  .overlay{
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,.55);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:10;
+  }
+  .overlay.active{display:flex;}
+
+  .panel{
+    position:relative;
+    transform:scale(0.9);
+    transform-origin:center;
+  }
+  .panel img{
+    display:block;
+    max-height:70vh;
+    width:auto;
+  }
+
+  .optBtns{position:absolute;inset:0;}
+  .opt{position:absolute;cursor:pointer;}
+
+  /* NOTIF CLUE */
+  .notif{
+    position:absolute;inset:0;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    background:rgba(0,0,0,.45);
+    z-index:12;
+  }
+  .notif.active{display:flex;}
+  .notifWrap{
+    position:relative;
+    transform:scale(0.9);
+    transform-origin:center;
+  }
+  .notifWrap img{
+    display:block;
+    max-width:min(80vw,700px);
+    max-height:75vh;
+    width:auto;
+    height:auto;
+  }
+  .okBtn{
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
+    bottom:6%;
+    cursor:pointer;
+  }
+
+  /* Overlay gelap nutupi layar game (waktu habis) */
+  .timeout-overlay{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(0,0,0,.55);
+    z-index:999;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .25s ease;
+  }
+
+  .timeout-overlay.show{
+    opacity:1;
+    pointer-events:auto;
+  }
+
+  .timeout-card{
+    width: 300px;
+    background:#fbe7cf;
+    border-radius:18px;
+    padding:12px 14px 16px;
+    box-shadow:0 16px 40px rgba(0,0,0,.45);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:12px;
+  }
+
+  .timeout-illu{
+    width: 85%;
+    height:auto;
+    display:block;
+    border-radius:10px;
+  }
+
+  .timeout-buttons{
+    display:flex;
+    gap:12px;
+    justify-content:center;
+  }
+
+  .pill-btn{
+    border:none;
+    padding:0;
+    background:transparent;
+    cursor:pointer;
+  }
+
+  .pill-btn img{
+    height: 40px;
+    width:auto;
+    display:block;
+  }
+
+  /* Deretan soal di bar cokelat bawah */
+  .qbar-inner{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    justify-content:center;
+    align-items:center;
+  }
+
+  .qbtn{
+    border:none;
+    padding:0;
+    background:transparent;
+    cursor:pointer;
+  }
+
+  .qbtn img{
+    height:40px;
+    width:auto;
+    display:block;
+  }
+
+  /* ===== OVERLAY SKOR ===== */
+  .score-overlay{
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,0.4);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:9999;
+  }
+
+  .score-overlay.show{
+    display:flex;
+  }
+
+  /* PANEL SKOR (diperkecil & diperbaiki) */
+  .score-panel{
+    width:360px;
+    background:rgba(70,40,38,0.95);
+    padding:22px 50px;
+    display:flex;
+    flex-direction:column;
+    color:white;
+    font-family:system-ui;
+    border-radius:16px;
+  }
+
+  .score-title{
+    font-size:32px;
+    font-weight:700;
+    text-align:left;
+    margin-bottom:26px;
+    text-decoration:underline;
+  }
+
+  .score-row{
+    font-size:24px;
+    font-weight:700;
+    display:flex;
+    justify-content:space-between;
+    margin-bottom:18px;
+  }
+
+  .score-row.total{
+    font-size:26px;
+    margin-top:8px;
+    margin-bottom:26px;
+  }
+
+  .score-row span:last-child{
+    min-width:120px;
+    text-align:right;
+  }
+
+  /* Bintang */
+  .score-stars{
+    display:flex;
+    gap:20px;
+    justify-content:flex-start;
+    margin-top:10px;
+    margin-bottom:24px;
+  }
+
+  .star{
+    width:70px;
+    opacity:0;
+    transform:scale(0.2);
+    transition:0.5s ease;
+  }
+
+  .star.show{
+    opacity:1;
+    transform:scale(1);
+  }
+
+  .hidden{opacity:0}
+
+  .btn-selesai{
+    background:none;
+    border:none;
+    cursor:pointer;
+    display:block;
+    margin:0 auto;
+    text-align:center;
+  }
+
+  /* ===== OVERLAY INTRO AWAL ===== */
+  .intro-overlay{
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,0.55);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:950;
+  }
+
+  .intro-card{
+    width: 360px;
+    background:#271602;
+    border-radius:18px;
+    padding:18px 20px 20px;
+    box-shadow:0 16px 40px rgba(0,0,0,.45);
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    text-align:center;
+  }
+
+  .intro-title{
+    font-size:20px;
+    font-weight:700;
+    color: #f5ecec;
+  }
+
+  .intro-text{
+    font-size:16px;
+    line-height:1.4;
+    color: #f5ecec;
+  }
+
+  .intro-ok{
+    margin-top:8px;
+    border:none;
+    border-radius:999px;
+    padding:8px 18px;
+    font-size:16px;
+    font-weight:600;
+    cursor:pointer;
+  }
+
+  .intro-ok:disabled{
+    opacity:0.5;
+    cursor:not-allowed;
+  }
+</style>
+</head>
+<body>
+  <audio id="bgm" src="bgmusic.mp3" autoplay loop></audio>
+  <main class="frame">
+    <section class="stage" id="stage">
+      <!-- ILUSTRASI PERTAMA -->
+      <img class="bg" id="bg" src="perpus2 template.png" alt="Ilustrasi TKP Kasus 1">
+
+      <!-- HUD -->
+      <div class="hud">
+        <img id="btnMenu" src="option.png" alt="Menu">
+        <div class="timerBox" id="timer">03:00</div>
+      </div>
+
+      <!-- ===== OVERLAY INTRO AWAL ===== -->
+      <div id="introOverlay" class="intro-overlay">
+        <div class="intro-card">
+          <div class="intro-title">Instruksi</div>
+          <div class="intro-text">
+            Sepertinya barang bukti untuk penyelidikan masih kurang, ayo cari barang bukti yang lain!
+          </div>
+          <button id="introOk" class="intro-ok" disabled>OK</button>
+        </div>
+      </div>
+
+            <!-- HOTSPOT BENDA (benda penting yang benar) -->
+<div class="hot" id="obj_bulpen"
+     style="left:62%; top:24%; width:5%; height:8%;"></div>
+
+<div class="hot" id="obj_gunting"
+     style="left:52%; top:4%; width:6%; height:10%;"></div>
+
+<div class="hot" id="obj_id"
+     style="left:27%; top:45.35%; width:6%; height:5%;"></div>
+
+<div class="hot" id="obj_stabilo"
+     style="left:70.36%; top:34%; width:6%; height:10%;"></div>
+
+<div class="hot" id="obj_tablet"
+     style="left:49%; top:27%; width:7%; height:18%;"></div>
+
+<!-- HOTSPOT JEBakan: hanya menampilkan tanda silang merah -->
+<!-- Buku 1948 -->
+<div class="hot decoy" id="obj_kalku"
+     style="left:7.85%; top:36.89%; width:4%; height:8%;"></div>
+
+<!-- Buku 15 Dunia -->
+<div class="hot decoy" id="obj_flashdisk"
+     style="left:26.02%; top:57.50%; width:5%; height:10%;"></div>
+
+<!-- Buku Catch-22 -->
+<div class="hot decoy" id="obj_stabilo51"
+     style="left:79.45%; top:2.35%; width:8%; height:15%;"></div>
+
+<!-- Buku 2000 -->
+<div class="hot decoy" id="obj_catatan0.8"
+     style="left:36.95%; top:27.74%; width:8%; height:15%;"></div>
+
+<button class="hintBtn" id="btnHint">
+  <img src="petunjuk.png" alt="Petunjuk">
+</button>
+
+<div id="ring" class="ring" style="display:none"></div>
+      <!-- BAR SOAL DI BAWAH -->
+<div class="qbar" id="qbar">
+  <div class="qbar-inner">
+
+    <!-- Soal 1 -->
+<button class="qbtn" id="btnSoal1">
+  <img src="1369.png" alt="7^4 − 6^4 + 264">
+</button>
+
+<!-- Soal 2 -->
+<button class="qbtn" id="btnSoal2">
+  <img src="0.5.png" alt="1.7 − 12 × 0.1">
+</button>
+
+<!-- Soal 3 -->
+<button class="qbtn" id="btnSoal3">
+  <img src="21.png" alt="√16 × 5 − 1">
+</button>
+
+<!-- Soal 4 -->
+<button class="qbtn" id="btnSoal4">
+  <img src="30.png" alt="300 ÷ (5 + 15) × 2">
+</button>
+
+<!-- Soal 5 -->
+<button class="qbtn" id="btnSoal5">
+  <img src="80.png" alt="4 × 15 − 80 ÷ (-4)">
+</button>
+
+  </div>
+</div>
+      <!-- OVERLAY ILUSTRASI KE-2 (PAPAN OPTION) -->
+      <div class="overlay" id="optOverlay">
+        <div class="panel">
+          <img src="papan option.png" alt="Papan Opsi" id="optBoard">
+          <div class="optBtns">
+            <img class="opt" id="optHidup" src="tombol mati.png" style="left:45%; top:26%; width:35%">
+            <img class="opt" id="optKembali" src="tombol kembali.png"   style="left:45%; top:68%; width:35%">
+            <img class="opt" id="optUlang"   src="tombol ulang.png" style="left:45%; top:47%; width:35%">
+            <img class="opt" id="optClose"   src="tombol silang.png"  style="right:7%; top:6%;  width:6%">
+          </div>
+        </div>
+      </div>
+
+           <!-- NOTIF CLUE BULPEN -->
+<div class="notif" id="notifbulpen">
+  <div class="notifWrap">
+    <img src="bulpen 0.5.png" alt="Pemberitahuan bulpen">
+    <img class="okBtn" id="okbulpen" src="tombol OK.png" alt="OK">
+  </div>
+</div>
+
+<!-- NOTIF CLUE GUNTING -->
+<div class="notif" id="notifgunting">
+  <div class="notifWrap">
+    <img src="gunting 21.png" alt="Pemberitahuan gunting">
+    <img class="okBtn" id="okgunting" src="tombol OK.png" alt="OK">
+  </div>
+</div>
+
+<!-- NOTIF CLUE ID -->
+<div class="notif" id="notifid">
+  <div class="notifWrap">
+    <img src="id 1369.png" alt="Pemberitahuan id">
+    <img class="okBtn" id="okid" src="tombol OK.png" alt="OK">
+  </div>
+</div>
+
+<!-- NOTIF CLUE STABILO -->
+<div class="notif" id="notifstabilo">
+  <div class="notifWrap">
+    <img src="stabilo 30.png" alt="Pemberitahuan stabilo">
+    <img class="okBtn" id="okstabilo" src="tombol OK.png" alt="OK">
+  </div>
+</div>
+
+<!-- NOTIF CLUE TABLET -->
+<div class="notif" id="notiftablet">
+  <div class="notifWrap">
+    <img src="tablet 80.png" alt="Pemberitahuan tablet">
+    <img class="okBtn" id="oktablet" src="tombol OK.png" alt="OK">
+  </div>
+</div>
+
+
+      <!-- Overlay waktu habis -->
+      <div id="timeout-overlay" class="timeout-overlay">
+        <div class="timeout-card">
+          <img class="timeout-illu" src="waktu habis.png" alt="Waktu habis" />
+          <div class="timeout-buttons">
+            <button id="btn-ulang" class="pill-btn">
+              <img src="tombol ulang.png" alt="Ulang">
+            </button>
+            <button id="btn-kembali" class="pill-btn">
+              <img src="tombol kembali.png" alt="Kembali">
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== OVERLAY SKOR ===== -->
+      <div id="scoreOverlay" class="score-overlay">
+        <div class="score-panel">
+          <h1 class="score-title">SKOR</h1>
+
+          <div class="score-row">
+            <span>PENEMUAN BARANG</span>
+            <span id="nilaiPenemuan">0</span>
+          </div>
+
+          <div class="score-row">
+            <span>SISA WAKTU</span>
+            <span id="nilaiWaktu">0</span>
+          </div>
+
+          <div class="score-row total">
+            <span>TOTAL SKOR</span>
+            <span id="nilaiTotal">0</span>
+          </div>
+
+          <div class="score-stars">
+            <img id="star1" class="star hidden" src="bintang poin.png">
+            <img id="star2" class="star hidden" src="bintang poin.png">
+            <img id="star3" class="star hidden" src="bintang poin.png">
+          </div>
+
+          <button id="btnSelesai" class="btn-selesai">
+            <img src="tombol selesai.png" height="55">
+          </button>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+<script>
+  /* ====== GAME STATE + REGENERASI ENERGI (SAMA SISTEM DENGAN SLIDE5) ====== */
+  const MAX_ENERGI = 50;
+  const REGEN_INTERVAL_MS = 2 * 60 * 1000; // 2 menit
+
+  const GameState = {
+    getUang() {
+      return parseInt(localStorage.getItem("uang") || "0", 10);
+    },
+    setUang(val) {
+      localStorage.setItem("uang", String(val));
+    },
+    addUang(delta) {
+      const v = this.getUang() + delta;
+      this.setUang(v);
+      return v;
+    },
+
+    getEnergi() {
+      // default cuma kalau belum ada sama sekali
+      return parseInt(localStorage.getItem("energi") || String(MAX_ENERGI), 10);
+    },
+    setEnergi(val) {
+      const clamped = Math.max(0, Math.min(MAX_ENERGI, val));
+      localStorage.setItem("energi", String(clamped));
+    },
+
+    // PANGGIL INI SETIAP KALI MENGURANGI ENERGI
+    decEnergi(n = 1) {
+      const now    = Date.now();
+      const before = this.getEnergi();
+      const after  = Math.max(0, before - n);
+
+      this.setEnergi(after);
+
+      // kalau energi pertama kali turun dari penuh (50 → <50)
+      if (after < MAX_ENERGI && !localStorage.getItem("lastRegen")) {
+        localStorage.setItem("lastRegen", String(now));
+      }
+
+      return after;
+    },
+
+    init() {
+      // HANYA kalau belum ada energi sama sekali → isi 50.
+      // Kalau sudah ada nilai sebelumnya, TIDAK disentuh.
+      if (localStorage.getItem("energi") === null) {
+        this.setEnergi(MAX_ENERGI);
+      }
+      if (localStorage.getItem("uang") === null) {
+        this.setUang(0);
+      }
+    }
+  };
+
+  function regenEnergi() {
+    const now     = Date.now();
+    const lastStr = localStorage.getItem("lastRegen");
+
+    // belum pernah turun energi → tidak ada regen
+    if (!lastStr) return;
+
+    let last = parseInt(lastStr, 10);
+    const diff = now - last;
+
+    if (diff < REGEN_INTERVAL_MS) return;
+
+    const langkah = Math.floor(diff / REGEN_INTERVAL_MS);
+    if (langkah <= 0) return;
+
+    let energi = GameState.getEnergi();
+
+    if (energi >= MAX_ENERGI) {
+      localStorage.removeItem("lastRegen");
+      return;
+    }
+
+    energi += langkah;
+    if (energi > MAX_ENERGI) energi = MAX_ENERGI;
+    GameState.setEnergi(energi);
+
+    if (energi >= MAX_ENERGI) {
+      localStorage.removeItem("lastRegen");
+    } else {
+      const lastBaru = last + langkah * REGEN_INTERVAL_MS;
+      localStorage.setItem("lastRegen", String(lastBaru));
+    }
+  }
+
+  GameState.init();
+  regenEnergi();
+  // boleh tidak ada setInterval di sini, tapi aman kalau mau:
+  setInterval(regenEnergi, 30000);
+
+  // ===== KURANGI ENERGI 4 SAAT MASUK KASUS 2 (HANYA SEKALI) =====
+  (function() {
+    let sudahDikurang = localStorage.getItem("energiKasus5");
+
+    if (!sudahDikurang) {
+      GameState.decEnergi(4);              // pakai logika decEnergi baru
+      localStorage.setItem("energiKasus5", "true");
+    }
+  })();
+
+
+  /* ====== PASANGAN BENDA → SOAL DI BAR BAWAH ====== */
+  const objToSoal = {
+    obj_id       : 'btnSoal1',
+    obj_bulpen   : 'btnSoal2',
+    obj_gunting  : 'btnSoal3',
+    obj_stabilo  : 'btnSoal4',
+    obj_tablet   : 'btnSoal5'
+  };
+
+  /* ====== TIMER ====== */
+  const timerDisplay = document.getElementById('timer');
+  let timeLeft = 180;        // 3 menit
+  let timerId = null;
+
+  function formatTime(s) {
+    const m = Math.floor(s / 60);
+    const d = s % 60;
+    return String(m).padStart(2, '0') + ':' + String(d).padStart(2, '0');
+  }
+
+  function updateTimer() {
+    timerDisplay.textContent = formatTime(timeLeft);
+
+    if (timeLeft <= 0) {
+      clearInterval(timerId);
+      showTimeoutOverlay();
+      return;
+    }
+    timeLeft--;
+  }
+
+  function startTimer() {
+    clearInterval(timerId);
+    timeLeft = 180;
+    updateTimer();
+    timerId = setInterval(updateTimer, 1000);
+  }
+
+  /* ====== OVERLAY WAKTU HABIS ====== */
+  function showTimeoutOverlay() {
+    const overlay = document.getElementById('timeout-overlay');
+    if (overlay) overlay.classList.add('show');
+  }
+
+  function hideTimeoutOverlay() {
+    const overlay = document.getElementById('timeout-overlay');
+    if (overlay) overlay.classList.remove('show');
+  }
+
+  document.getElementById('btn-ulang').addEventListener('click', () => {
+    // kalau mau energi potong lagi saat ulang kasus5, hapus flag ini:
+    localStorage.removeItem("energiKasus5");
+    hideTimeoutOverlay();
+    resetSolved();
+    startTimer();
+    document.getElementById('scoreOverlay').classList.remove('show');
+    window.location.reload();
+  });
+
+  document.getElementById('btn-kembali').addEventListener('click', () => {
+    hideTimeoutOverlay();
+    alert('Di sini nanti diarahkan ke menu/slide sebelumnya.');
+  });
+
+  /* ====== MENU GARIS TIGA ====== */
+  const btnMenu    = document.getElementById('btnMenu');
+  const optOverlay = document.getElementById('optOverlay');
+  const optClose   = document.getElementById('optClose');
+
+  btnMenu.addEventListener('click', () => {
+    optOverlay.classList.add('active');
+  });
+
+  optClose.addEventListener('click', () => {
+    optOverlay.classList.remove('active');
+  });
+
+  optOverlay.addEventListener('click', (e) => {
+    if(e.target === optOverlay){
+      optOverlay.classList.remove('active');
+    }
+  });
+
+  /* ====== PETUNJUK → LINGKARAN DI KIAT ====== */
+  const btnHintEl = document.getElementById('btnHint');
+  const ringEl    = document.getElementById('ring');
+  const footEl    = document.getElementById('obj_gunting');
+  const stageEl   = document.getElementById('stage');
+
+  if (btnHintEl && ringEl && footEl && stageEl){
+    btnHintEl.addEventListener('click', () => {
+      const footRect  = footEl.getBoundingClientRect();
+      const stageRect = stageEl.getBoundingClientRect();
+
+      const padding = 5;
+      const offsetX = -50;
+      const offsetY = -50;
+
+      const left   = footRect.left - stageRect.left + offsetX ;
+      const top    = footRect.top  - stageRect.top  + offsetY;
+      const width  = footRect.width  + padding;
+      const height = footRect.height + padding;
+
+      ringEl.style.left   = left   + 'px';
+      ringEl.style.top    = top    + 'px';
+      ringEl.style.width  = width  + 'px';
+      ringEl.style.height = height + 'px';
+      ringEl.style.display = 'block';
+
+      setTimeout(() => {
+        ringEl.style.display = 'none';
+      }, 2000);
+    });
+  }
+
+  /* ====== NOTIF CLUE UNTUK SEMUA BENDA ====== */
+  const mapClueToNotif = {
+    obj_id          : 'notifid',
+    obj_bulpen      : 'notifbulpen',
+    obj_gunting     : 'notifgunting',
+    obj_stabilo     : 'notifstabilo',
+    obj_tablet      : 'notiftablet',
+  };
+
+  let solvedCount = 0;
+  const totalSoal = 5;
+  const solvedObj = {};
+
+  Object.keys(mapClueToNotif).forEach(id => {
+    const el = document.getElementById(id);
+    if(!el) return;
+
+    el.addEventListener('click', () => {
+      const notifId = mapClueToNotif[id];
+      const box = document.getElementById(notifId);
+      if(box) box.classList.add('active');
+      markSolved(id);
+    });
+  });
+
+  ['id','bulpen','gunting','stabilo','tablet'].forEach(suffix => {
+    const okBtn  = document.getElementById('ok' + suffix);
+    const notif  = document.getElementById('notif' + suffix);
+    if (okBtn && notif) {
+      okBtn.addEventListener('click', () => {
+        notif.classList.remove('active');
+        checkComplete();
+      });
+      notif.addEventListener('click', (e) => {
+        if (e.target === notif) {
+          notif.classList.remove('active');
+          checkComplete();
+        }
+      });
+    }
+  });
+
+  /* ====== FUNGSI KEMAJUAN & SKOR ====== */
+  function markSolved(objId){
+    if(solvedObj[objId]) return;
+    solvedObj[objId] = true;
+    solvedCount++;
+
+    const soalId = objToSoal[objId];
+    const btn = document.getElementById(soalId);
+    if(btn){
+      btn.style.display = 'none';
+    }
+  }
+
+  function resetSolved(){
+    solvedCount = 0;
+    for(const k in solvedObj) delete solvedObj[k];
+    Object.values(objToSoal).forEach(id => {
+      const btn = document.getElementById(id);
+      if(btn) btn.style.display = 'inline-block';
+    });
+  }
+
+  function checkComplete(){
+    if(solvedCount >= totalSoal){
+      clearInterval(timerId);
+      setTimeout(showScore, 700);
+    }
+  }
+
+  let lastTotalScore = 0;
+
+  function showScore(){
+    const overlay = document.getElementById('scoreOverlay');
+    overlay.classList.add('show');
+
+    const skorPenemuan = solvedCount * 100;
+    const skorWaktu    = timeLeft * 100;
+    const total        = skorPenemuan + skorWaktu;
+
+    lastTotalScore = total;
+
+    GameState.setUang(total);
+    localStorage.setItem("uang", total);
+
+    animateValue("nilaiPenemuan", 0, skorPenemuan, 500);
+    animateValue("nilaiWaktu",    0, skorWaktu,    800);
+    animateValue("nilaiTotal",    0, total,       1200);
+
+    setTimeout(() => showStars(total), 1400);
+  }
+
+  function animateValue(id, start, end, duration){
+    const obj = document.getElementById(id);
+    let startTime = null;
+
+    function step(timestamp){
+      if(!startTime) startTime = timestamp;
+      const progress = timestamp - startTime;
+      const current = Math.min(
+        start + (end - start) * (progress / duration),
+        end
+      );
+      obj.textContent = Math.floor(current);
+
+      if(progress < duration){
+        requestAnimationFrame(step);
+      }
+    }
+    requestAnimationFrame(step);
+  }
+
+  function showStars(total){
+    const s1 = document.getElementById("star1");
+    const s2 = document.getElementById("star2");
+    const s3 = document.getElementById("star3");
+
+    [s1,s2,s3].forEach(s => s.classList.remove('show'));
+
+    if(total >= 12000){
+      s1.classList.add("show");
+      setTimeout(()=> s2.classList.add("show"), 300);
+      setTimeout(()=> s3.classList.add("show"), 600);
+    } else if(total >= 9000){
+      s1.classList.add("show");
+      setTimeout(()=> s2.classList.add("show"), 300);
+    } else if(total >= 5000){
+      s1.classList.add("show");
+    }
+  }
+
+  document.getElementById('btnSelesai').addEventListener('click', () => {
+    let totalAkhir = lastTotalScore;
+    if (!totalAkhir || totalAkhir <= 0) {
+      totalAkhir = parseInt(document.getElementById("nilaiTotal")?.textContent || "0", 10);
+    }
+
+    localStorage.setItem("uang", totalAkhir);
+    GameState.setUang(totalAkhir);
+
+    window.location.href = "asa3.html";
+  });
+
+  const btnUlangOpt = document.getElementById('optUlang');
+  if (btnUlangOpt) {
+    btnUlangOpt.addEventListener('click', (e) => {
+      e.stopPropagation();
+      window.location.reload();
+    });
+  }
+
+  const btnKembaliOpt = document.getElementById('optKembali');
+  if (btnKembaliOpt) {
+    btnKembaliOpt.addEventListener('click', (e) => {
+      e.stopPropagation();
+      window.location.href = "ss.html";
+    });
+  }
+
+  /* ===== MUSIK: TOGGLE DENGAN TOMBOL optHidup ===== */
+  const bgm = document.getElementById('bgm');
+  const soundBtn = document.getElementById('optHidup');
+
+  const imgMati  = 'tombol mati.png';
+  const imgHidup = 'tombol hidup.png';
+
+  window.addEventListener('load', () => {
+    if (soundBtn) {
+      soundBtn.src = imgMati;
+    }
+  });
+
+  if (soundBtn) {
+    soundBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+
+      if (bgm.paused) {
+        bgm.play().catch(err => console.log('Gagal play bgm:', err));
+        soundBtn.src = imgMati;
+      } else {
+        bgm.pause();
+        soundBtn.src = imgHidup;
+      }
+    });
+  }
+
+  /* ====== LOGIKA INTRO: TUNDA TIMER SAMPAI KLIK OK ====== */
+  window.addEventListener('load', () => {
+    const intro = document.getElementById('introOverlay');
+    const introOk = document.getElementById('introOk');
+
+    if (intro && introOk) {
+      introOk.disabled = false;
+      introOk.textContent = 'OK';
+
+      introOk.addEventListener('click', () => {
+        intro.style.display = 'none';
+        startTimer();
+      });
+    } else {
+      startTimer();
+    }
+  });
+
+  /* ====== HOTSPOT JEBakan: klik → tanda silang merah 2 detik ====== */
+  const decoys = document.querySelectorAll('.decoy');
+
+  decoys.forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      el.classList.add('clicked');
+      setTimeout(() => {
+        el.classList.remove('clicked');
+      }, 2000);
+    });
+  });
+</script>
+</body>
+</html>

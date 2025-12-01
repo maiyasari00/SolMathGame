@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SOLMATH — Tersangka (slde8)</title>
+
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    width:100vw;height:100vh;overflow:hidden;
+    background:#0b0f16;display:flex;justify-content:center;align-items:center;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+  }
+
+  .frame{
+    width:min(100vw, calc(100vh * 16/9));
+    aspect-ratio:16/9;
+    position:relative;overflow:hidden;
+    border-radius:18px;
+    box-shadow:0 24px 60px rgba(0,0,0,.45);
+    background:#000;
+  }
+
+  /* background tersangka */
+  .bg{
+    position:absolute;inset:0;
+    width:100%;height:100%;
+    object-fit:contain;
+    background:#0b0f16;
+    user-select:none;-webkit-user-drag:none;
+    z-index:0;
+  }
+
+  /* ===== TOP BAR ENERGI & UANG ===== */
+  .status-energi{
+    position:absolute;top:3%;left:25%;
+    font-size:22px;font-weight:800;color:#ffd45e;
+    text-shadow:0 2px 6px rgba(0,0,0,.8);
+    z-index:20;pointer-events:none;
+  }
+  .status-uang{
+    position:absolute;top:3%;right:35%;
+    font-size:22px;font-weight:800;color:#ffd45e;
+    text-shadow:0 2px 6px rgba(0,0,0,.8);
+    z-index:20;pointer-events:none;
+  }
+
+  /* ===== HOTSPOT TERSANGKA ===== */
+  .suspect{
+    position:absolute;cursor:pointer;z-index:4;
+  }
+
+  /* gambar tersangka */
+  .suspect-img{
+    position:absolute;
+    width:28%;
+    cursor:pointer;
+    transition:0.2s;
+    z-index:4;
+  }
+  .suspect-img:hover{
+    transform:scale(1.05);
+    filter:brightness(1.15);
+  }
+
+  /* Posisi masing-masing tersangka */
+  .suspect-radit   { left:20%; top:6%; }
+  .suspect-rara    { left:58%; top:8%; }
+
+  /* hotspot pilih pelaku (yang ada stamp) */
+  .suspect-hotspot{
+    position:absolute;
+    cursor:pointer;
+    z-index:6;
+  }
+
+  /* stempel pelaku */
+  .stamp{
+    position:absolute;
+    width:35%;
+    top:-5%;
+    left:50%;
+    transform:translateX(-50%) rotate(-12deg);
+    opacity:0;
+    transition:.25s ease;
+    pointer-events:none;
+    z-index:9;
+  }
+  .suspect-hotspot.selected .stamp{ opacity:1; }
+
+  /* tombol interogasi & pilih pelaku */
+  .btn-interogasi{
+    position:absolute;left:3.5%;top:45%;
+    width:14%;cursor:pointer;z-index:6;
+    transition:.15s;
+  }
+  .btn-pilih{
+    position:absolute;right:3.5%;top:45%;
+    width:12%;cursor:pointer;z-index:6;
+    transition:.15s;
+  }
+  .btn-interogasi:hover,.btn-pilih:hover{
+    transform:translateY(-2px) scale(1.03);
+    filter:drop-shadow(0 6px 8px rgba(0,0,0,.5));
+  }
+
+  /* ===== OVERLAY PAPAN INTEROGASI ===== */
+  .overlay{
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,.55);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:100;
+  }
+  .overlay.active{ display:flex; }
+
+  .board{
+    position:relative;
+    width:min(80vw,820px);
+    aspect-ratio:4/3;
+  }
+  .board .board-bg{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+    display:block;
+  }
+
+  .qwrap{ position:absolute; inset:0; }
+
+  .qimg{
+    position:absolute;
+    left:10%;
+    cursor:pointer;
+    transition:.15s;
+  }
+  .qimg:hover{
+    transform:scale(1.02);
+    filter:brightness(1.1);
+  }
+
+  /* posisi 4 pertanyaan */
+  #q1{ top:28%; width: 29%;}
+  #q2{ top:37%; width: 69%;}
+  #q3{ top:47%; width: 86%;}
+  #q4{ top:57%; width: 70%;}
+
+  /* ===== BUBBLE JAWABAN ===== */
+  .bubble{
+    position:absolute;
+    max-width:32%;
+    padding:14px 16px;
+    background:rgba(80,60,55,.92);
+    color:#f7eadb;
+    border-radius:16px;
+    box-shadow:0 10px 22px rgba(0,0,0,.45);
+    font-size:1.05vw;
+    line-height:1.4;
+    z-index:50;
+    display:none;
+  }
+  .bubble.show{display:block;}
+
+  /* posisi bubble */
+  #bubble-left{ left:16%; top:37%; }
+  #bubble-right{ right:10%; top:60%; }
+
+  /* presensi overlay */
+  .presensi{
+    position:absolute;inset:0;
+    background:rgba(0,0,0,.6);
+    display:none;align-items:center;justify-content:center;
+    z-index:120;
+  }
+  .presensi.show{display:flex;}
+  .presensi img{
+    width:30%;
+    height:auto;display:block;
+  }
+
+  /* ===== MENU BAWAH ===== */
+  .btn-menu{ position:absolute; bottom:3%; width:18%; cursor:pointer; transition:.2s; z-index:10;}
+  .btn-bukti{ left:21%; }
+  .btn-lab{ left:41%; }
+  .btn-tersangka{ left:61%; }
+
+  .btn-menu:hover{
+    transform:scale(1.05);
+    filter:brightness(1.2) drop-shadow(0 6px 8px rgba(0,0,0,.45));
+  }
+  .btn-menu:active{ transform:scale(.97); filter:brightness(.95); }
+
+  /* ===== OPTION OVERLAY ===== */
+  .optOverlay{
+    position:absolute;inset:0;
+    background:rgba(0,0,0,.55);
+    display:none;align-items:center;justify-content:center;
+    z-index:200;
+  }
+  .optOverlay.active{display:flex;}
+  .optPanel{position:relative;transform:scale(.9);}
+  .optPanel img{display:block;max-height:70vh;width:auto;}
+  .optBtns{position:absolute;inset:0;}
+  .opt{position:absolute;cursor:pointer;}
+
+  .btn-setting{
+    position:absolute;top:2%;left:12%;width:6%;
+    cursor:pointer;z-index:150;transition:.2s;
+  }
+  .btn-setting:hover{transform:scale(1.05);filter:brightness(1.2);}
+
+  /* ===== POPUP KONFIRMASI PILIH PELAKU ===== */
+  .confirm-overlay{
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,.6);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:300;
+  }
+  .confirm-overlay.show{ display:flex; }
+
+  .confirm-box{
+    background:#3b2720;
+    border-radius:18px;
+    padding:24px 28px;
+    width:40%;
+    max-width:520px;
+    color:#fbe9cc;
+    box-shadow:0 18px 40px rgba(0,0,0,.7);
+    text-align:center;
+    font-size:1.1vw;
+  }
+  .confirm-box h3{
+    margin-bottom:10px;
+    font-size:1.3vw;
+  }
+  .confirm-btns{
+    margin-top:18px;
+    display:flex;
+    justify-content:space-around;
+    gap:12px;
+  }
+  .confirm-btn{
+    padding:10px 26px;
+    border-radius:20px;
+    border:none;
+    font-weight:700;
+    cursor:pointer;
+    font-size:1vw;
+    box-shadow:0 6px 12px rgba(0,0,0,.4);
+    transition:.15s;
+  }
+  .confirm-ya{
+    background:#ffb347;
+    color:#3b2720;
+  }
+  .confirm-batal{
+    background:#5a4a45;
+    color:#fbe9cc;
+  }
+  .confirm-btn:hover{
+    transform:translateY(-2px);
+    filter:brightness(1.1);
+  }
+  .confirm-btn:active{
+    transform:translateY(1px) scale(.97);
+    filter:brightness(.95);
+  }
+
+  /* ===== INTRO OVERLAY (HANYA SEKALI) ===== */
+  .intro-overlay{
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,0.55);
+    display:none;              /* JS yang akan menampilkan */
+    align-items:center;
+    justify-content:center;
+    z-index:250;
+  }
+
+  .intro-card{
+    width:380px;
+    background:#fbe7cf;
+    border-radius:18px;
+    padding:18px 22px 20px;
+    box-shadow:0 16px 40px rgba(0,0,0,.45);
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    text-align:center;
+  }
+
+  .intro-title{
+    font-size:20px;
+    font-weight:700;
+    color:#4b2c24;
+  }
+
+  .intro-text{
+    font-size:16px;
+    line-height:1.4;
+    color:#2b1a18;
+  }
+
+  .intro-ok{
+    margin-top:8px;
+    border:none;
+    border-radius:999px;
+    padding:8px 18px;
+    font-size:16px;
+    font-weight:600;
+    cursor:pointer;
+    color:#ffffff;
+    background:#c0693d;
+    box-shadow:0 4px 8px rgba(0,0,0,.35);
+  }
+  .intro-ok:active{
+    transform:scale(0.97);
+    box-shadow:0 2px 5px rgba(0,0,0,.45);
+  }
+</style>
+</head>
+
+<body>
+<audio id="bgm" src="bgmusic.mp3" autoplay loop></audio>
+
+<div class="frame" id="frame">
+
+  <img src="slide tersangka template.png" class="bg" alt="Tersangka">
+
+  <!-- tombol pengaturan -->
+  <img src="tombol pengaturan.png" class="btn-setting" id="btnMenu" alt="Pengaturan">
+
+  <!-- angka energi & uang -->
+  <div class="status-energi"><span id="teksEnergi">0</span></div>
+  <div class="status-uang"><span id="teksUang">0</span></div>
+
+  <!-- ===== TERSANGKA (GAMBAR) ===== -->
+  <img src="radit.png"    class="suspect-img suspect-radit"    id="radit"    alt="radit">
+  <img src="rara.png" class="suspect-img suspect-rara" id="rara" alt="rara">
+
+  <!-- HOTSPOT TERSANGKA (STAMP) -->
+  <div class="suspect-hotspot" id="sus1" style="left:20%; top:40%; width:35%; height:48%;">
+    <img class="stamp" src="stempel pelaku.png" alt="Pelaku">
+  </div>
+
+  <div class="suspect-hotspot" id="sus3" style="left:49%; top:40%; width:35%; height:48%;">
+    <img class="stamp" src="stempel pelaku.png" alt="Pelaku">
+  </div>
+
+  <!-- tombol interogasi & pilih pelaku -->
+  <img src="tombol interogasi.png" class="btn-interogasi" id="btnInterogasi" alt="Interogasi">
+  <img src="tombol pilih pelaku.png" class="btn-pilih" id="btnPilih" alt="Pilih Pelaku">
+
+  <!-- BUBBLE jawaban -->
+  <div class="bubble" id="bubble-left"></div>
+  <div class="bubble" id="bubble-right"></div>
+
+  <!-- MENU bawah -->
+  <img src="barang_bukti.png"   class="btn-menu btn-bukti"     alt="Barang Bukti"  onclick="window.location.href='asa3.html'">
+  <img src="laboratorium.png"   class="btn-menu btn-lab"       alt="Laboratorium"  onclick="window.location.href='asa4.html'">
+  <img src="tersangka.png"      class="btn-menu btn-tersangka" alt="Tersangka"     onclick="window.location.href='asa5.html'">
+
+  <!-- OVERLAY papan interogasi -->
+  <div class="overlay" id="interogasiOverlay">
+    <div class="board">
+      <img src="papan interogasi.png" class="board-bg" alt="Papan Interogasi">
+
+      <img src="identitas tersangka.png" class="qimg" id="q1" data-q="identitas" alt="Identitas tersangka">
+      <img src="alibi.png"     class="qimg" id="q2" data-q="alibi"  alt="Alibi tersangka di hari kejadian">
+      <img src="peminjaman.png"       class="qimg" id="q3" data-q="pinjambuku"    alt="Peminjaman buku tersangka">
+      <img src="pemakaian gunting.png"      class="qimg" id="q4" data-q="pakaigunting"    alt="Pemakaian gunting oleh tersangka">
+    </div>
+  </div>
+  <!-- OPTION overlay -->
+  <div class="optOverlay" id="optOverlay">
+    <div class="optPanel">
+      <img src="papan option.png" alt="Papan Opsi">
+      <div class="optBtns">
+        <img class="opt" id="optHidup"   src="tombol mati.png"    style="left:45%; top:26%; width:35%">
+        <img class="opt" id="optUlang"   src="tombol ulang.png"   style="left:45%; top:47%; width:35%">
+        <img class="opt" id="optKembali" src="tombol kembali.png" style="left:45%; top:68%; width:35%">
+        <img class="opt" id="optClose"   src="tombol silang.png"  style="right:7%; top:6%;  width:6%">
+      </div>
+    </div>
+  </div>
+
+  <!-- POPUP KONFIRMASI PILIH PELAKU -->
+  <div class="confirm-overlay" id="confirmOverlay">
+    <div class="confirm-box">
+      <h3>Apakah kamu yakin dia tersangkanya?</h3>
+      <p>Setelah dikonfirmasi, kamu tidak bisa mengganti pilihan pelaku.</p>
+      <div class="confirm-btns">
+        <button class="confirm-btn confirm-batal" id="btnBatalPelaku">Batal</button>
+        <button class="confirm-btn confirm-ya"    id="btnYakinPelaku">Yakin</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTRO OVERLAY: HANYA SEKALI SAJA -->
+  <div id="introOverlay" class="intro-overlay">
+    <div class="intro-card">
+      <div class="intro-title">Instruksi</div>
+      <div class="intro-text">
+        Tekan tombol <b>Interogasi Tersangka</b> di sebelah kiri jika kamu ingin menanyai tersangka.<br><br>
+        Tekan tombol <b>Pilih Pelaku</b> di sebelah kanan jika kamu ingin memilih pelaku berdasarkan penyelidikanmu.
+      </div>
+      <button id="introOk" class="intro-ok">OK</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ===== GAME STATE + REGEN ENERGI (SAMA DENGAN SLIDE5–7) =====
+const MAX_ENERGI = 50;
+const REGEN_INTERVAL_MS = 2 * 60 * 1000; // 2 menit
+
+const GameState = {
+  getUang() {
+    return parseInt(localStorage.getItem("uang") || "0", 10);
+  },
+  setUang(val) {
+    localStorage.setItem("uang", String(val));
+  },
+  addUang(delta) {
+    const v = this.getUang() + delta;
+    this.setUang(v);
+    return v;
+  },
+
+  getEnergi() {
+    return parseInt(localStorage.getItem("energi") || String(MAX_ENERGI), 10);
+  },
+  setEnergi(val) {
+    const clamped = Math.max(0, Math.min(MAX_ENERGI, val));
+    localStorage.setItem("energi", String(clamped));
+  },
+
+  // pengurangan energi: di sini timer regen pertama kali di-start
+  decEnergi(n = 1) {
+    const now    = Date.now();
+    const before = this.getEnergi();
+    const after  = Math.max(0, before - n);
+
+    this.setEnergi(after);
+
+    // kalau energi pertama kali turun dari penuh dan lastRegen belum ada
+    if (after < MAX_ENERGI && !localStorage.getItem("lastRegen")) {
+      localStorage.setItem("lastRegen", String(now));
+    }
+
+    return after;
+  },
+
+  init() {
+    if (localStorage.getItem("energi") === null) {
+      this.setEnergi(MAX_ENERGI);
+    }
+    if (localStorage.getItem("uang") === null) {
+      this.setUang(0);
+    }
+    // ⚠️ TIDAK menyentuh lastRegen di sini
+  }
+};
+
+// fungsi regen global
+function regenEnergi() {
+  const now     = Date.now();
+  const lastStr = localStorage.getItem("lastRegen");
+
+  // belum pernah turun energi → tidak ada regen
+  if (!lastStr) return;
+
+  let last = parseInt(lastStr, 10);
+  const diff = now - last;
+
+  if (diff < REGEN_INTERVAL_MS) return;
+
+  const langkah = Math.floor(diff / REGEN_INTERVAL_MS);
+  if (langkah <= 0) return;
+
+  let energi = GameState.getEnergi();
+
+  // kalau sudah penuh, matikan timer regen
+  if (energi >= MAX_ENERGI) {
+    localStorage.removeItem("lastRegen");
+    return;
+  }
+
+  energi += langkah;
+  if (energi > MAX_ENERGI) energi = MAX_ENERGI;
+  GameState.setEnergi(energi);
+
+  if (energi >= MAX_ENERGI) {
+    // penuh → bersihkan lastRegen
+    localStorage.removeItem("lastRegen");
+  } else {
+    // belum penuh → geser titik waktu sesuai langkah
+    const lastBaru = last + langkah * REGEN_INTERVAL_MS;
+    localStorage.setItem("lastRegen", String(lastBaru));
+  }
+}
+
+GameState.init();
+regenEnergi();
+
+/* update top bar */
+function updateTopBar(){
+  regenEnergi();
+  document.getElementById("teksEnergi").textContent = GameState.getEnergi();
+  document.getElementById("teksUang").textContent   = GameState.getUang();
+}
+window.addEventListener("DOMContentLoaded", updateTopBar);
+setInterval(updateTopBar, 1000);
+
+/* =================== PILIH TERSANGKA =================== */
+let selectedSuspectId = null;
+let finalPelaku = null;
+let pendingPelaku = null;
+let pickMode = false;
+
+const hotspots = [...document.querySelectorAll(".suspect-hotspot")];
+
+// mapping nama → id hotspot
+function getHotspotIdFromName(nama){
+  if(nama === "radit")return "sus1";
+  if(nama === "rara") return "sus3";
+  return null;
+}
+
+const btnPilih        = document.getElementById("btnPilih");
+const confirmOverlay  = document.getElementById("confirmOverlay");
+const btnYakinPelaku  = document.getElementById("btnYakinPelaku");
+const btnBatalPelaku  = document.getElementById("btnBatalPelaku");
+
+// aktifkan mode pilih pelaku
+btnPilih.addEventListener("click", ()=>{
+  if(finalPelaku){
+    alert("Kamu sudah memilih pelaku. Lanjutkan kasus berikutnya.");
+    return;
+  }
+  pickMode = true;
+  alert("Klik salah satu tersangka untuk memilih pelaku.");
+});
+
+/* klik gambar tersangka -> munculkan popup konfirmasi */
+function handleSuspectClick(nama){
+  if(!pickMode) return;
+  pendingPelaku = nama;
+  confirmOverlay.classList.add("show");
+}
+
+document.getElementById("radit").addEventListener("click",    ()=>handleSuspectClick("radit"));
+document.getElementById("rara").addEventListener("click",   ()=>handleSuspectClick("rara"));
+
+/* tombol BATAL di popup */
+btnBatalPelaku.addEventListener("click", ()=>{
+  pendingPelaku = null;
+  confirmOverlay.classList.remove("show");
+});
+
+/* tombol YAKIN di popup */
+btnYakinPelaku.addEventListener("click", ()=>{
+  if(!pendingPelaku) return;
+  confirmOverlay.classList.remove("show");
+  pickMode = false;
+
+  // bersihkan stempel lama
+  hotspots.forEach(h=>h.classList.remove("selected"));
+
+  // kasih stempel di hotspot yang sesuai
+  const hotspotId = getHotspotIdFromName(pendingPelaku);
+  if(hotspotId){
+    document.getElementById(hotspotId).classList.add("selected");
+    selectedSuspectId = hotspotId;
+  }
+
+  finalPelaku = pendingPelaku;
+  localStorage.setItem("pelaku", finalPelaku);
+
+  cekPelaku();
+});
+
+/* cek benar / salah dan pindah slide */
+function cekPelaku(){
+  const pelakuBenar = "radit";  // pelaku sebenarnya
+
+  if(finalPelaku === pelakuBenar){
+    window.location.href = "asa_benar.html";
+  }else{
+    window.location.href = "asa_salah.html";
+  }
+}
+
+/* =================== INTEROGASI =================== */
+const btnInterogasi     = document.getElementById("btnInterogasi");
+const interogasiOverlay = document.getElementById("interogasiOverlay");
+const presensiOverlay   = document.getElementById("presensiOverlay");
+
+btnInterogasi.addEventListener("click", ()=>{
+  hideBubbles();
+  interogasiOverlay.classList.add("active");
+});
+
+interogasiOverlay.addEventListener("click",(e)=>{
+  if(e.target===interogasiOverlay){
+    interogasiOverlay.classList.remove("active");
+  }
+});
+
+/* =================== BUBBLE JAWABAN =================== */
+const bubbleLeft  = document.getElementById("bubble-left");
+const bubbleRight = document.getElementById("bubble-right");
+
+function hideBubbles(){
+  [bubbleLeft,bubbleRight].forEach(b=>b.classList.remove("show"));
+}
+
+const answers = {
+  identitas: {
+    left:  "Aku Radit Andika, laki-laki, usia 25 Tahun. ", //Deni
+    right: "Aku Dian Rara Wijaya, perempuan, 22 Tahun. "          //Siti
+  },
+  alibi: {
+    left:  "Di hari kejadian, aku masuk hanya sebentar setelah memilih buku yang kucari, kemudian aku mengantre untuk meminjam buku di belakang kakak baju kuning.",
+    right: "Saat itu, aku cukup lama di dalam sebelum menemukan buku yang akan kupinjam. Di meja pustakawan aku meminjam buku dan di belakangku ada laki-laki berambut coklat itu. Lalu aku pergi setelah mendapat telfon dan lupa dengan buku dan id-ku. "
+  },
+  pinjambuku: {
+    left:  "mm... aku meminjam buku berjudul 7 keajaiban dunia.",
+    right: "Aku meminjam buku berjudul 100 Hari Bersamamu, tapi tertingal di meja pustakawan."
+  },
+  pakaigunting: {
+    left:  "mm... aku meminjam gunting untuk... untuk memotong kukuku.",
+    right: "Aku meminjam gunting, untuk memotong benang di bajuku."
+  }
+};
+
+function showBubbles(key){
+  hideBubbles();
+  bubbleLeft.innerHTML  = answers[key]?.left  || "";
+  bubbleRight.innerHTML = answers[key]?.right || "";
+  bubbleLeft.classList.add("show");
+  bubbleRight.classList.add("show");
+}
+
+/* klik pertanyaan di papan interogasi */
+document.querySelectorAll(".qimg").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    const q = btn.dataset.q;
+
+    if(GameState.getEnergi()<=0){
+      alert("Energi habis! Tidak bisa interogasi.");
+      return;
+    }
+
+    GameState.decEnergi(1);
+    updateTopBar();
+
+    interogasiOverlay.classList.remove("active");
+
+    showBubbles(q);
+  });
+});
+
+/* =================== OPTION OVERLAY =================== */
+const btnMenu    = document.getElementById("btnMenu");
+const optOverlay = document.getElementById("optOverlay");
+const optClose   = document.getElementById("optClose");
+
+btnMenu.addEventListener("click", ()=>{
+  optOverlay.classList.add("active");
+});
+optClose.addEventListener("click",(e)=>{
+  e.stopPropagation();
+  optOverlay.classList.remove("active");
+});
+optOverlay.addEventListener("click",(e)=>{
+  if(e.target===optOverlay) optOverlay.classList.remove("active");
+});
+
+document.getElementById("optUlang").addEventListener("click",(e)=>{
+  e.stopPropagation();
+  window.location.reload();
+});
+document.getElementById("optKembali").addEventListener("click",(e)=>{
+  e.stopPropagation();
+  window.location.href="ss.html";
+});
+
+/* MUSIK toggle */
+const bgm      = document.getElementById("bgm");
+const soundBtn = document.getElementById("optHidup");
+const imgMati  = "tombol mati.png";
+const imgHidup = "tombol hidup.png";
+
+window.addEventListener("load",()=>{ soundBtn.src=imgMati; });
+soundBtn.addEventListener("click",(e)=>{
+  e.stopPropagation();
+  if(bgm.paused){
+    bgm.play().catch(()=>{});
+    soundBtn.src=imgMati;
+  }else{
+    bgm.pause();
+    soundBtn.src=imgHidup;
+  }
+});
+
+/* ===== INTRO OVERLAY: MUNCUL SEKALI SAJA ===== */
+window.addEventListener('load', () => {
+  const intro   = document.getElementById('introOverlay');
+  const introOk = document.getElementById('introOk');
+  if (!intro || !introOk) return;
+
+  const sudah = localStorage.getItem('slide8IntroShown') === 'true';
+  if (sudah) return;
+
+  intro.style.display = 'flex';
+  introOk.addEventListener('click', () => {
+    intro.style.display = 'none';
+    localStorage.setItem('slide8IntroShown', 'true');
+  }, { once:true });
+});
+</script>
+</body>
+</html>

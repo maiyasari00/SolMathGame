@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SOLMATH — Kasus 1 Berhasil</title>
+
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    width:100vw;height:100vh;overflow:hidden;
+    background:#0b0f16;
+    display:flex;justify-content:center;align-items:center;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+  }
+  .frame{
+    width:min(100vw, calc(100vh * 16/9));
+    aspect-ratio:16/9;
+    position:relative;
+    overflow:hidden;
+    border-radius:18px;
+    box-shadow:0 24px 60px rgba(0,0,0,.45);
+    background:#000;
+  }
+  .bg{
+    position:absolute;inset:0;
+    width:100%;height:100%;
+    object-fit:contain;
+    user-select:none;-webkit-user-drag:none;
+  }
+
+  /* area teks narasi di bagian bawah */
+  .text-box{
+    position:absolute;
+    left:0;right:0;bottom:0;
+    padding:18px 40px 26px;
+    background:linear-gradient(to top, rgba(39,23,16,.95), rgba(39,23,16,.7), transparent);
+    color:#fbe9cc;
+    font-size:1.05vw;
+    line-height:1.5;
+  }
+
+  /* efek ketik */
+  #narasi::after{
+    content:"";
+    display:inline-block;
+    width:8px;
+    height:1.1em;
+    margin-left:4px;
+    background:#fbe9cc;
+    animation:blink .8s infinite;
+  }
+  @keyframes blink{
+    0%,50%{opacity:1;}
+    51%,100%{opacity:0;}
+  }
+
+  /* tombol Oke di kanan bawah */
+  .btn-oke{
+    position:absolute;
+    right:4%;bottom:2%;
+    padding:10px 32px;
+    background:#ffb347;
+    color:#3b2720;
+    border-radius:22px;
+    font-weight:700;
+    font-size:1.05vw;
+    cursor:pointer;
+    box-shadow:0 8px 18px rgba(0,0,0,.6);
+    border:none;
+    transition:.15s;
+  }
+  .btn-oke:hover{
+    transform:translateY(-2px);
+    filter:brightness(1.05);
+  }
+  .btn-oke:active{
+    transform:translateY(1px) scale(.97);
+    filter:brightness(.95);
+  }
+</style>
+</head>
+<body>
+<audio id="bgm" src="bgmusic.mp3" autoplay loop></audio>
+<div class="frame">
+  <img src="penjara template.png" alt="Kasus Berhasil" class="bg">
+
+  <div class="text-box">
+    <div id="narasi"></div>
+  </div>
+
+  <button class="btn-oke" id="btnOke" style="display:none;">Oke</button>
+</div>
+
+<script>
+// teks narasi dengan efek ketik
+const narasiEl = document.getElementById("narasi");
+const btnOke   = document.getElementById("btnOke");
+
+// kalau mau pakai nama detektif dari localStorage, bisa gini:
+const namaDetektif = (localStorage.getItem('solmath_name') || 'Detektif').trim();
+
+// isi kalimat bisa kamu ubah sendiri
+const teks =
+  "Waw " + namaDetektif +
+  ", kamu hebat sekali bisa memecahkan kasus pertamamu dalam waktu singkat. " +
+  "Dari hasil penyelidikan ini kita tahu jika pencuri sepatu milik Ahmad adalah Gibran, teman sekelasnya. " +
+  "Sekarang, apakah kamu siap untuk memulai kasus baru?";
+
+let idx = 0;
+
+function typeNext(){
+  if(idx < teks.length){
+    narasiEl.textContent += teks.charAt(idx);
+    idx++;
+    setTimeout(typeNext, 35);   // kecepatan ketik
+  }else{
+    // setelah selesai ngetik, munculkan tombol Oke
+    btnOke.style.display = "block";
+  }
+}
+// mulai efek ketik saat halaman selesai dimuat
+window.addEventListener("load", typeNext);
+
+// tombol Oke -> ke ss.html
+btnOke.addEventListener("click", ()=>{
+  window.location.href = "ss.html";
+});
+
+// musik toggle
+const bgm = document.getElementById("bgm");
+const soundBtn = document.getElementById("optHidup");
+const imgMati="tombol mati.png";
+const imgHidup="tombol hidup.png";
+
+window.addEventListener("load",()=>{ soundBtn.src=imgMati; });
+soundBtn.addEventListener("click",(e)=>{
+  e.stopPropagation();
+  if(bgm.paused){
+    bgm.play().catch(()=>{});
+    soundBtn.src=imgMati;
+  }else{
+    bgm.pause();
+    soundBtn.src=imgHidup;
+  }
+});
+</script>
+</body>
+</html>

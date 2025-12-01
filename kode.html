@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SOLMATH — Buka Brankas</title>
+
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    width:100vw;height:100vh;overflow:hidden;
+    background:#0b0f16;
+    display:flex;justify-content:center;align-items:center;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+  }
+
+  .frame{
+    width:min(100vw, calc(100vh * 16/9));
+    aspect-ratio:16/9;
+    position:relative;
+    overflow:hidden;
+    border-radius:18px;
+    box-shadow:0 24px 60px rgba(0,0,0,.45);
+    background:#000;
+  }
+
+  .bg{
+    position:absolute;inset:0;
+    width:100%;height:100%;
+    object-fit:contain;
+    user-select:none;
+    -webkit-user-drag:none;
+    z-index:0;
+  }
+
+  /* ===== PANEL KODE (kode masuk.png sebagai panel) ===== */
+  .slot-wrapper{
+    position:absolute;
+    left:25%;           /* geser panel secara global */
+    top:12%;
+    width:45%;          /* besar panel relatif ke frame */
+    z-index:2;
+  }
+  .slot-wrapper-inner{
+    position:relative;
+    width:100%;
+    height:auto;
+  }
+  .slot-img{
+    width:100%;
+    height:auto;
+    display:block;
+  }
+
+  /* ===== KOTAK HIJAU: KOLUM DIGIT DI DALAM PANEL ===== */
+  .digit-column{
+    position:absolute;
+    /* posisikan kolom ini mengikuti kotak hijau di gambar kode masuk */
+    left:17%;            /* SESUAIKAN jika perlu */
+    top:0%;
+    width:13%;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    gap:20px;            /* jarak antar angka */
+    z-index:3;
+    pointer-events:none;
+  }
+  .digit-cell{
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:2.1vw;
+    font-weight:800;
+    color:#e9ffd1;
+    text-shadow:0 0 8px rgba(0,0,0,.8);
+    line-height:1;
+  }
+
+  /* tanda X ketika salah */
+  .error-mark{
+    position:absolute;
+    left:9%;
+    top:10%;
+    width:13%;
+    height:80%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:5vw;
+    color:#ff4444;
+    text-shadow:0 0 14px rgba(0,0,0,.9);
+    opacity:0;
+    pointer-events:none;
+    z-index:5;
+    transition:opacity .2s ease;
+  }
+  .error-mark.show{ opacity:1; }
+
+  /* ===== KEYPAD ANGKA DI ATAS PANEL KODE MASUK ===== */
+  .keypad{
+    position:absolute;
+    /* posisikan blok keypad di area tombol pada gambar kode masuk */
+    right:8%;           /* SESUAIKAN jika perlu */
+    top:13%;
+    width:48%;          /* lebar blok keypad di dalam panel */
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    row-gap:10px;       /* jarak vertikal antar tombol */
+    column-gap:8px;     /* jarak horizontal antar tombol */
+    justify-items:center;
+    z-index:4;
+  }
+
+  .num-btn{
+    width:80%;
+    aspect-ratio:1/1;
+    border-radius:10px;
+    background:#2b5f99;
+    border:3px solid rgba(255,255,255,.3);
+    box-shadow:0 6px 12px rgba(0,0,0,.45);
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:2vw;
+    color:#fff;
+    font-weight:800;
+    position:relative;
+    overflow:hidden;
+    transition:.15s;
+  }
+
+  .num-btn img{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+    display:block;
+  }
+
+  .num-btn:hover{
+    transform:translateY(-2px);
+    filter:brightness(1.1);
+  }
+  .num-btn:active{
+    transform:translateY(1px) scale(.97);
+    filter:brightness(.95);
+  }
+
+  /* tombol hapus / reset */
+  .btn-reset{
+    grid-column:span 3;
+    border-radius:20px;
+    padding:10px 16px;
+    background:#4b3b68;
+    color:#fbe9ff;
+    border:2px solid rgba(255,255,255,.35);
+    cursor:pointer;
+    font-weight:700;
+    font-size:1vw;
+    box-shadow:0 6px 12px rgba(0,0,0,.45);
+    transition:.15s;
+  }
+  .btn-reset:hover{
+    transform:translateY(-2px);
+    filter:brightness(1.05);
+  }
+  .btn-reset:active{
+    transform:translateY(1px) scale(.97);
+    filter:brightness(.95);
+  }
+
+  /* ===== POPUP BERHASIL (isi brankas) ===== */
+  .success-overlay{
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,.6);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:20;
+  }
+  .success-overlay.show{ display:flex; }
+
+  .success-card{
+    background:#fbe7cf;
+    border-radius:20px;
+    padding:18px 22px 22px;
+    max-width:60%;
+    text-align:center;
+    box-shadow:0 18px 40px rgba(0,0,0,.7);
+  }
+
+  .success-card img{
+    max-width:260px;
+    width:50%;
+    height:auto;
+    display:block;
+    margin:0 auto 16px;
+  }
+
+  .success-text{
+    font-size:1.05vw;
+    line-height:1.5;
+    color:#3a2415;
+    margin-bottom:18px;
+  }
+
+  .btn-ok-popup{
+    border:none;
+    border-radius:999px;
+    padding:8px 24px;
+    font-size:1.05vw;
+    font-weight:700;
+    cursor:pointer;
+    background:#c0693d;
+    color:#fff;
+    box-shadow:0 6px 12px rgba(0,0,0,.5);
+    transition:.15s;
+  }
+  .btn-ok-popup:hover{
+    transform:translateY(-2px);
+    filter:brightness(1.05);
+  }
+  .btn-ok-popup:active{
+    transform:translateY(1px) scale(.97);
+    filter:brightness(.95);
+  }
+</style>
+</head>
+<body>
+<audio id="bgm" src="bgmusic.mp3" autoplay loop></audio>
+
+<div class="frame">
+
+  <!-- background ruangan -->
+  <img src="kode template.png" alt="Latar brankas" class="bg">
+
+  <!-- PANEL KODE: gambar + slot hijau + keypad di satu container -->
+  <div class="slot-wrapper">
+    <div class="slot-wrapper-inner">
+      <!-- gambar panel kode -->
+      <img src="kode masuk.png" alt="Panel kode brankas" class="slot-img">
+
+      <!-- kolom angka di dalam slot hijau -->
+      <div class="digit-column" id="digitColumn">
+        <div class="digit-cell"></div>
+        <div class="digit-cell"></div>
+        <div class="digit-cell"></div>
+        <div class="digit-cell"></div>
+      </div>
+
+      <!-- tanda X kalau salah -->
+      <div class="error-mark" id="errorMark">✖</div>
+
+      <!-- keypad angka menempel di atas panel -->
+      <div class="keypad">
+        <button class="num-btn" data-num="1"><img src="kode1.png" alt="1"></button>
+        <button class="num-btn" data-num="2"><img src="kode2.png" alt="2"></button>
+        <button class="num-btn" data-num="3"><img src="kode3.png" alt="3"></button>
+
+        <button class="num-btn" data-num="4"><img src="kode4.png" alt="4"></button>
+        <button class="num-btn" data-num="5"><img src="kode5.png" alt="5"></button>
+        <button class="num-btn" data-num="6"><img src="kode6.png" alt="6"></button>
+
+        <button class="num-btn" data-num="7"><img src="kode7.png" alt="7"></button>
+        <button class="num-btn" data-num="8"><img src="kode8.png" alt="8"></button>
+        <button class="num-btn" data-num="9"><img src="kode9.png" alt="9"></button>
+
+        <button class="num-btn" data-num="0"><img src="kode0.png" alt="0"></button>
+        <button class="btn-reset" id="btnReset">Hapus Kode</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- POPUP BERHASIL -->
+  <div class="success-overlay" id="successOverlay">
+    <div class="success-card">
+      <img src="map lomba.png" alt="Lembar Soal Lomba">
+      <div class="success-text">
+        Brankas berhasil dibuka! Isi brankas adalah <b>lembar soal lomba</b>.
+        Berkat kejelianmu sebagai detektif, berkas penting ini berhasil
+        diselamatkan dan tidak jatuh ke tangan yang salah.
+      </div>
+      <button class="btn-ok-popup" id="btnPopupOk">Oke</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ===== LOGIKA KODE BRANKAS =====
+  const correctCode = "3361";              // kode benar: 3-3-6-1
+  const digitColumn = document.getElementById("digitColumn");
+  const digitCells  = Array.from(digitColumn.querySelectorAll(".digit-cell"));
+  const errorMark   = document.getElementById("errorMark");
+  const successOverlay = document.getElementById("successOverlay");
+  const btnPopupOk  = document.getElementById("btnPopupOk");
+  const btnReset    = document.getElementById("btnReset");
+
+  let inputDigits = [];
+
+  function renderDigits(){
+    for(let i=0;i<digitCells.length;i++){
+      digitCells[i].textContent = inputDigits[i] !== undefined ? inputDigits[i] : "";
+    }
+  }
+
+  function resetCode(){
+    inputDigits = [];
+    renderDigits();
+  }
+
+  function showError(){
+    errorMark.classList.add("show");
+    setTimeout(()=>{
+      errorMark.classList.remove("show");
+      resetCode();
+    }, 900);
+  }
+
+  function checkCode(){
+    if(inputDigits.length < 4) return;
+    const attempt = inputDigits.join("");
+    if(attempt === correctCode){
+      // sukses → tampilkan popup brankas terbuka
+      successOverlay.classList.add("show");
+    }else{
+      showError();
+    }
+  }
+
+  // klik angka
+  document.querySelectorAll(".num-btn[data-num]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      if(successOverlay.classList.contains("show")) return; // sudah selesai
+      if(inputDigits.length >= 4) return;                   // maksimal 4 digit
+
+      const d = btn.getAttribute("data-num");
+      inputDigits.push(d);
+      renderDigits();
+
+      if(inputDigits.length === 4){
+        checkCode();
+      }
+    });
+  });
+
+  // tombol hapus
+  btnReset.addEventListener("click", ()=>{
+    resetCode();
+  });
+
+  // tombol OK di popup → ke ss.html
+  btnPopupOk.addEventListener("click", ()=>{
+    window.location.href = "ss.html";
+  });
+</script>
+</body>
+</html>
